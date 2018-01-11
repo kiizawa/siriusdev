@@ -82,7 +82,27 @@ int main() {
   ret = tm.Move(TieringManager::ARCHIVE, object);
   assert(ret == 0);
 
+  /**
+   * For modify, use librados API directly
+   * All modifies must go to Storage Pool regardless of the actual location of the object
+   */
+  librados::bufferlist buf1;
+  buf1.append("baz");
+  ret = io_ctx_storage.write_full(object, buf1);
+  assert(ret == 0);
 
-
+  /**
+   * For read, use librados API directly
+   * All reads must go to Storage Pool regardless of the actual location of the object
+   */
+  librados::bufferlist buf2;
+  ret = io_ctx_storage.read(object, buf2, 0, 0);
+  std::string result(buf2.c_str(), buf2.length());
+  assert(result == "bar");
+  
+  /* Delete the object */
+  ret = tm.Delete(object);
+  assert(ret == 0);
+  
   return 0;
 }

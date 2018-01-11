@@ -37,6 +37,12 @@ public:
    * @param object_name the name of the object
    */
   int Move(Tier tier, const std::string &object_name);
+  /**
+   * Delete an object
+   *
+   * @param object_name the name of the object
+   */
+  int Delete(const std::string &object_name);
 private:
   librados::Rados *cluster_;
   librados::IoCtx *io_ctx_storage_;

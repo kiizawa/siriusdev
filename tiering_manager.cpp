@@ -261,9 +261,49 @@ int TieringManager::Move(Tier tier, const std::string &object_name) {
       }
       break;
     }
-
+  
   default:
     abort();
+  }
+  return r;
+}
+
+int TieringManager::Delete(const std::string &object_name) {
+  int r;
+
+  // Remove the object in Storage Pool.
+  librados::ObjectWriteOperation op;
+  op.remove();
+  librados::AioCompletion *completion = cluster_->aio_create_completion();
+  r = io_ctx_storage_->aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
+  if (r != 0) {
+    printf("aio_operate failed r=%d\n", r);
+    completion->release();
+    return r;
+  }
+  completion->wait_for_safe();
+  r = completion->get_return_value();
+  completion->release();
+  if (r != 0) {
+    printf("remove failed r=%d\n", r);
+    return r;
+  }
+
+  // If the object exists in Archive Pool, remove it too.
+  op.assert_exists();
+  op.remove();
+  completion = cluster_->aio_create_completion();
+  r = io_ctx_archive_->aio_operate(object_name, completion, &op);
+  if (r != 0) {
+    printf("aio_operate failed r=%d\n", r);
+    completion->release();
+    return r;
+  }
+  completion->wait_for_safe();
+  r = completion->get_return_value();
+  completion->release();
+  if (r == ECANCELED) {
+    r = 0;
   }
   return r;
 }
