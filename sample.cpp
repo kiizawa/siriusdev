@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <rados/librados.hpp>
-#include "tiering_manager.hpp"
+#include "object_mover.hpp"
 
 int main() {
 
@@ -70,16 +70,16 @@ int main() {
     }
   }
   
-  /* Initialize a Tiering Manager */
-  TieringManager tm(&cluster, &io_ctx_storage, &io_ctx_archive);
+  /* Initialize a Object Mover */
+  ObjectMover om(&cluster, &io_ctx_storage, &io_ctx_archive);
 
   /* Create an object in Fast Tier (SSD) */
   std::string object("foo");
-  ret = tm.Create(TieringManager::FAST, object, "bar");
+  ret = om.Create(ObjectMover::FAST, object, "bar");
   assert(ret == 0);
 
   /* Move the object to Archive Tier (Tape Drive) */
-  ret = tm.Move(TieringManager::ARCHIVE, object);
+  ret = om.Move(ObjectMover::ARCHIVE, object);
   assert(ret == 0);
 
   /**
@@ -101,7 +101,7 @@ int main() {
   assert(result == "bar");
   
   /* Delete the object */
-  ret = tm.Delete(object);
+  ret = om.Delete(object);
   assert(ret == 0);
   
   return 0;
