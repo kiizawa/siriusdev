@@ -179,6 +179,18 @@ int ObjectMover::Move(Tier tier, const std::string &object_name) {
 	printf("set_alloc_hint2 failed r=%d\n", r);
 	break;
       }
+      // remove the object in Archive Pool
+      op.remove();
+      completion = cluster_->aio_create_completion();
+      r = io_ctx_archive_->aio_operate(object_name, completion, &op);
+      if (r != 0) {
+	printf("aio_operate failed r=%d\n", r);
+	completion->release();
+	return r;
+      }
+      completion->wait_for_safe();
+      r = completion->get_return_value();
+      completion->release();
       break;
     }
 
