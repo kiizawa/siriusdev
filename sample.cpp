@@ -98,7 +98,7 @@ int main() {
   librados::bufferlist buf2;
   ret = io_ctx_storage.read(object, buf2, 0, 0);
   std::string result(buf2.c_str(), buf2.length());
-  assert(result == "bar");
+  assert(result == "baz");
   
   /* Delete the object */
   ret = om.Delete(object);
