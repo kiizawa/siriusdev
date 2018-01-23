@@ -134,7 +134,10 @@ int ObjectMover::Move(Tier tier, const std::string &object_name) {
       completion->wait_for_safe();
       r = completion->get_return_value();
       completion->release();
-      if (r == -ECANCELED) {
+      if (r == 0) {
+	// The object is stored in Storage Pool.
+	break;
+      } else if (r == -ECANCELED) {
 	// The object is stored in Archive Pool.
 	librados::ObjectWriteOperation op;
 	// remove the redirect
