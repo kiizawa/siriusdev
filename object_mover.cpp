@@ -9,27 +9,28 @@ int ObjectMover::Create(Tier tier, const std::string &object_name, const std::st
   case FAST:
   case SLOW:
     {
+      int r;
       librados::ObjectWriteOperation op;
+      librados::bufferlist v;
       if (tier == FAST) {
+	v.append("fast");
 	op.set_alloc_hint2(0, 0, LIBRADOS_ALLOC_HINT_FLAG_FAST_TIER);
       } else {
+	v.append("slow");
 	op.set_alloc_hint2(0, 0, 0);
       }
       op.write_full(bl);
-      // add a metadata that shows this object is stored in Storage Pool
-      librados::bufferlist v;
-      v.append("0");
-      op.setxattr("archive", v);
+      op.setxattr("tier", v);
       librados::AioCompletion *completion = cluster_->aio_create_completion();
       r = io_ctx_storage_->aio_operate(object_name, completion, &op, 0);
-      if (r != 0) {
-	printf("aio_operate failed r=%d\n", r);
-	completion->release();
-	break;
-      }
+      assert(r == 0);
       completion->wait_for_safe();
       r = completion->get_return_value();
       completion->release();
+      if (r != 0) {
+	printf("write_full/setxattr failed r=%d\n", r);
+	break;
+      }
       break;
     }
   case ARCHIVE:
@@ -39,17 +40,12 @@ int ObjectMover::Create(Tier tier, const std::string &object_name, const std::st
 
 	librados::ObjectWriteOperation op;
 	op.write_full(bl);
-	// add a metadata that shows this object is stored in Archive Pool
 	librados::bufferlist v;
-	v.append("1");
-	op.setxattr("archive", v);
+	v.append("archive");
+	op.setxattr("tier", v);
 	librados::AioCompletion *completion = cluster_->aio_create_completion();
 	r = io_ctx_archive_->aio_operate(object_name, completion, &op);
-	if (r != 0) {
-	  printf("aio_operate failed r=%d\n", r);
-	  completion->release();
-	  break;
-	}
+	assert(r == 0);
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	completion->release();
@@ -66,11 +62,7 @@ int ObjectMover::Create(Tier tier, const std::string &object_name, const std::st
 	op.write_full(bl_dummy);
 	librados::AioCompletion *completion = cluster_->aio_create_completion();
 	r = io_ctx_storage_->aio_operate(object_name, completion, &op);
-	if (r != 0) {
-	  printf("aio_operate failed r=%d\n", r);
-	  completion->release();
-	  break;
-	}
+	assert(r == 0);
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	completion->release();
@@ -86,11 +78,7 @@ int ObjectMover::Create(Tier tier, const std::string &object_name, const std::st
 	op.set_redirect(object_name, *io_ctx_archive_, 0);
 	librados::AioCompletion *completion = cluster_->aio_create_completion();
 	r = io_ctx_storage_->aio_operate(object_name, completion, &op, 0);
-	if (r != 0) {
-	  printf("aio_operate failed r=%d\n", r);
-	  completion->release();
-	  break;
-	}
+	assert(r == 0);
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	completion->release();
@@ -99,8 +87,9 @@ int ObjectMover::Create(Tier tier, const std::string &object_name, const std::st
 	  break;
 	}
       }
+      break;
     }
-    break;
+
   default:
     abort();
   }
@@ -113,179 +102,202 @@ int ObjectMover::Move(Tier tier, const std::string &object_name) {
   case FAST:
   case SLOW:
     {
-      // check if this object is stored in Archive Pool
-      librados::ObjectWriteOperation op;
-      int ret = 0;
-      librados::bufferlist v;
-      v.append("0");
-      op.cmpxattr("archive", LIBRADOS_CMPXATTR_OP_EQ, v);
-      if (tier == FAST) {
-	op.set_alloc_hint2(0, 0, LIBRADOS_ALLOC_HINT_FLAG_FAST_TIER);
-      } else {
-	op.set_alloc_hint2(0, 0, 0);
-      }
-      librados::AioCompletion *completion = cluster_->aio_create_completion();
-      r = io_ctx_storage_->aio_operate(object_name, completion, &op, 0);
-      if (r != 0) {
-	printf("aio_operate failed r=%d\n", r);
-	completion->release();
+      Lock(object_name);
+      int current_tier = GetLocation(object_name);
+      if (current_tier == tier) {
+	// the object is already stored in specified tier
+	Unlock(object_name);
 	break;
       }
-      completion->wait_for_safe();
-      r = completion->get_return_value();
-      completion->release();
-      if (r == 0) {
-	// The object is stored in Storage Pool.
-	break;
-      } else if (r == -ECANCELED) {
-	// The object is stored in Archive Pool.
+      if (current_tier == ARCHIVE) {
+	// remove the redirect in Storage Pool
 	librados::ObjectWriteOperation op;
-	// remove the redirect
 	op.remove();
 	librados::AioCompletion *completion = cluster_->aio_create_completion();
 	r = io_ctx_storage_->aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
-	if (r != 0) {
-	  printf("aio_operate failed r=%d\n", r);
-	  completion->release();
-	  break;
-	}
+	assert(r == 0);
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	completion->release();
 	if (r != 0) {
+	  Unlock(object_name);
 	  printf("remove failed r=%d\n", r);
-	  break;
+	  return r;
 	}
+	// TODO: the following operations are not atomic!
 	// promote the objcet to Storage Pool
-	op.copy_from(object_name, *io_ctx_archive_, 0);
+	librados::ObjectWriteOperation op2;
+	op2.copy_from(object_name, *io_ctx_archive_, 0);
 	// modify the metadata
-	librados::bufferlist v;
-	v.append("0");
-	op.setxattr("archive", v);
-	// move the object to the specified tier
+	librados::bufferlist v2;
 	if (tier == FAST) {
-	  op.set_alloc_hint2(0, 0, LIBRADOS_ALLOC_HINT_FLAG_FAST_TIER);
+	  v2.append("fast");
+	  op2.set_alloc_hint2(0, 0, LIBRADOS_ALLOC_HINT_FLAG_FAST_TIER);
 	} else {
-	  op.set_alloc_hint2(0, 0, 0);
+	  v2.append("slow");
+	  op2.set_alloc_hint2(0, 0, 0);
 	}
+	op2.setxattr("tier", v2);
 	completion = cluster_->aio_create_completion();
-	r = io_ctx_storage_->aio_operate(object_name, completion, &op, 0);
-	if (r != 0) {
-	  printf("aio_operate failed r=%d\n", r);
-	  completion->release();
-	  break;
-	}
+	r = io_ctx_storage_->aio_operate(object_name, completion, &op2, 0);
+	assert(r == 0);
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	completion->release();
         if (r != 0) {
+	  Unlock(object_name);
 	  printf("set_alloc_hint2 failed r=%d\n", r);
 	  break;
 	}
-	// remove the object in Archive Pool
-	op.remove();
-	completion = cluster_->aio_create_completion();
-	r = io_ctx_archive_->aio_operate(object_name, completion, &op);
-	if (r != 0) {
-	  printf("aio_operate failed r=%d\n", r);
-	  completion->release();
-	  return r;
+      } else {
+	librados::ObjectWriteOperation op;
+	librados::bufferlist v;
+	if (tier == FAST) {
+	  v.append("fast");
+	  op.set_alloc_hint2(0, 0, LIBRADOS_ALLOC_HINT_FLAG_FAST_TIER);
+	} else {
+	  v.append("slow");
+	  op.set_alloc_hint2(0, 0, 0);
 	}
+	librados::AioCompletion *completion = cluster_->aio_create_completion();
+	r = io_ctx_storage_->aio_operate(object_name, completion, &op, 0);
+	assert(r == 0);
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	completion->release();
-      } else if (r != 0) {
-	// unknown error
-	printf("set_alloc_hint2 failed r=%d\n", r);
-	break;
+        if (r != 0) {
+	  Unlock(object_name);
+	  printf("set_alloc_hint2 failed r=%d\n", r);
+	  break;
+	}
       }
+      Unlock(object_name);
       break;
     }
 
   case ARCHIVE:
     {
+      Lock(object_name);
+      if (GetLocation(object_name) == ARCHIVE) {
+	// the object is already stored in Archive Pool
+	Unlock(object_name);
+	break;
+      }
+    retry_copy:
       {
+	// demote the object
+	int r;
+	int version;
 	librados::ObjectWriteOperation op;
-	int ret = 0;
-	// check if this object is stored in Storage Pool
-	librados::bufferlist v1;
-	v1.append("0");
-	op.cmpxattr("archive", LIBRADOS_CMPXATTR_OP_EQ, v1);
-	// Prevent another client from demoting this object,
-	// becasue demoting the object that is already in Archive Pool seems to enter an infinite loop.
-	librados::bufferlist v2;
-	v2.append("2");
-	op.setxattr("archive", v2);
+	op.copy_from(object_name, *io_ctx_storage_, 0);
 	librados::AioCompletion *completion = cluster_->aio_create_completion();
-	r = io_ctx_storage_->aio_operate(object_name, completion, &op, 0);
+	r = io_ctx_archive_->aio_operate(object_name, completion, &op);
+	assert(r == 0);
+	completion->wait_for_safe();
+	r = completion->get_return_value();
 	if (r != 0) {
-	  printf("aio_operate failed r=%d\n", r);
+	  printf("copy_from failed! r=%d\n", r);
 	  completion->release();
+	  Unlock(object_name);
 	  break;
 	}
+	version = completion->get_version64();
+	completion->release();
+
+	// replace the object in Storage Pool with a redirect
+	op.assert_version(version);
+	op.set_redirect(object_name, *io_ctx_archive_, 1);
+
+	// modify the metadata
+	librados::bufferlist bl;
+	bl.append("archive");
+	op.setxattr("tier", bl);
+	completion = cluster_->aio_create_completion();
+	r = io_ctx_storage_->aio_operate(object_name, completion, &op, 0);
+	assert(r == 0);
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	completion->release();
-	if (r == -ECANCELED) {
-	  // The object is already in Archive Pool or another client is demoting it.
-	  r = 0;
-	  break;
-	}
-	r = 0;
-      retry:
-	{
-	  // demote the object
-	  int r;
-	  int version;
-	  librados::ObjectWriteOperation op;
-	  op.copy_from(object_name, *io_ctx_storage_, 0);
-	  librados::AioCompletion *completion = cluster_->aio_create_completion();
-	  r = io_ctx_archive_->aio_operate(object_name, completion, &op);
-	  if (r != 0) {
-	    printf("aio_operate failed r=%d\n", r);
-	    completion->release();
-	    break;
-	  }
-	  completion->wait_for_safe();
-	  r = completion->get_return_value();
-	  if (r != 0) {
-	    printf("copy_from failed! ret=%d\n", r);
-	    completion->release();
-	    break;
-	  }
-	  version = completion->get_version64();
-	  completion->release();
-
-	  // replace the object in Storage Pool with a redirect
-	  op.assert_version(version);
-	  op.set_redirect(object_name, *io_ctx_archive_, 1);
-	  // modify the metadata
-	  librados::bufferlist bl;
-	  bl.append("1");
-	  op.setxattr("archive", bl);
-	  completion = cluster_->aio_create_completion();
-	  r = io_ctx_storage_->aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
-	  if (r != 0) {
-	    printf("aio_operate failed r=%d\n", r);
-	    completion->release();
-	    break;
-	  }
-	  completion->wait_for_safe();
-	  r = completion->get_return_value();
-	  completion->release();
-	  if (r != 0) {
-	    // the object was modified after copy_from() completed
-	    goto retry;
-	  }
+	if (r != 0) {
+	  // the object was modified after copy_from() completed
+	  goto retry_copy;
 	}
       }
+      Unlock(object_name);
       break;
     }
-  
+
   default:
     abort();
   }
   return r;
+}
+
+int ObjectMover::GetLocation(const std::string &object_name) {
+  int r;
+  librados::ObjectReadOperation op;
+  librados::bufferlist bl;
+  int err;
+  op.getxattr("tier", &bl, &err);
+  librados::AioCompletion *completion = cluster_->aio_create_completion();
+  r = io_ctx_storage_->aio_operate(object_name, completion, &op, 0, NULL);
+  assert(r == 0);
+  completion->wait_for_safe();
+  r = completion->get_return_value();
+  completion->release();
+  assert(r == 0);
+  std::string tier_string(bl.c_str(), bl.length());
+  int tier = -1;
+  if (tier_string == "fast") {
+    tier = FAST;
+  } else if (tier_string == "slow") {
+    tier = SLOW;
+  } else if (tier_string == "archive") {
+    tier = ARCHIVE;
+  } else {
+    abort();
+  }
+  return tier;
+}
+
+void ObjectMover::Lock(const std::string &object_name) {
+ retry_lock:
+  int r = 0;
+  librados::ObjectWriteOperation op;
+  librados::bufferlist v1;
+  v1.append("1");
+  op.cmpxattr("lock", LIBRADOS_CMPXATTR_OP_NE, v1);
+  librados::bufferlist v2;
+  v2.append("1");
+  op.setxattr("lock", v2);
+  librados::AioCompletion *completion = cluster_->aio_create_completion();
+  r = io_ctx_storage_->aio_operate(object_name, completion, &op, 0);
+  assert(r == 0);
+  completion->wait_for_safe();
+  r = completion->get_return_value();
+  completion->release();
+  if (r == -ECANCELED) {
+    goto retry_lock;
+  }
+  assert(r == 0);
+}
+
+void ObjectMover::Unlock(const std::string &object_name) {
+  int r = 0;
+  librados::ObjectWriteOperation op;
+  librados::bufferlist v1;
+  v1.append("1");
+  op.cmpxattr("lock", LIBRADOS_CMPXATTR_OP_EQ, v1);
+  librados::bufferlist v2;
+  v2.append("0");
+  op.setxattr("lock", v2);
+  librados::AioCompletion *completion = cluster_->aio_create_completion();
+  r = io_ctx_storage_->aio_operate(object_name, completion, &op, 0);
+  assert(r == 0);
+  completion->wait_for_safe();
+  r = completion->get_return_value();
+  completion->release();
+  assert(r == 0);
 }
 
 int ObjectMover::Delete(const std::string &object_name) {

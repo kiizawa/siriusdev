@@ -43,7 +43,25 @@ public:
    * @param object_name the name of the object
    */
   int Delete(const std::string &object_name);
+  /**
+   * Get the Location of the object
+   *
+   * @param object_name the name of the object
+   */
+  int GetLocation(const std::string &object_name);
 private:
+  /**
+   * Lock advisory lock
+   *
+   * @param object_name the name of the object
+   */
+  void Lock(const std::string &object_name);
+  /**
+   * Unlock advisory lock
+   *
+   * @param object_name the name of the object
+   */
+  void Unlock(const std::string &object_name);
   librados::Rados *cluster_;
   librados::IoCtx *io_ctx_storage_;
   librados::IoCtx *io_ctx_archive_;
