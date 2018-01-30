@@ -308,11 +308,7 @@ int ObjectMover::Delete(const std::string &object_name) {
   op.remove();
   librados::AioCompletion *completion = cluster_->aio_create_completion();
   r = io_ctx_storage_->aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
-  if (r != 0) {
-    printf("aio_operate failed r=%d\n", r);
-    completion->release();
-    return r;
-  }
+  assert(r == 0);
   completion->wait_for_safe();
   r = completion->get_return_value();
   completion->release();
@@ -326,11 +322,7 @@ int ObjectMover::Delete(const std::string &object_name) {
   op.remove();
   completion = cluster_->aio_create_completion();
   r = io_ctx_archive_->aio_operate(object_name, completion, &op);
-  if (r != 0) {
-    printf("aio_operate failed r=%d\n", r);
-    completion->release();
-    return r;
-  }
+  assert(r == 0);
   completion->wait_for_safe();
   r = completion->get_return_value();
   completion->release();
