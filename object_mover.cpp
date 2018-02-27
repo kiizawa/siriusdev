@@ -2,9 +2,13 @@
 #include "object_mover.hpp"
 
 int ObjectMover::Create(Tier tier, const std::string &object_name, const std::string &value) {
-  int r = 0;
   librados::bufferlist bl;
   bl.append(value);
+  return Create(tier, object_name, bl);
+}
+
+int ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl) {
+  int r = 0;
   switch(tier) {
   case FAST:
   case SLOW:

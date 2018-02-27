@@ -30,6 +30,7 @@ public:
    * @param value the data of the object
    */
   int Create(Tier tier, const std::string &object_name, const std::string &value);
+  int Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl);
   /**
    * Move an object to the specified tier
    *

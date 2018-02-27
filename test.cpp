@@ -93,13 +93,16 @@ int main() {
   std::string object_as("AS");
   std::string object_aa("AA");
 
+  librados::bufferlist bl;
+  bl.append("value");
+
   std::string result;
 
   // 1. FAST -> FAST
 
   printf("test: FAST    -> FAST   \n");
 
-  ret = om.Create(ObjectMover::FAST, object_ff, object_ff);
+  ret = om.Create(ObjectMover::FAST, object_ff, bl);
   assert(ret == 0);
   //read(io_ctx_storage, object_ff, object_ff);
 
@@ -111,7 +114,7 @@ int main() {
 
   printf("test: FAST    -> SLOW   \n");
   
-  ret = om.Create(ObjectMover::FAST, object_fs, object_fs);
+  ret = om.Create(ObjectMover::FAST, object_fs, bl);
   assert(ret == 0);
   //read(io_ctx_storage, object_fs, object_fs);
 
@@ -123,7 +126,7 @@ int main() {
 
   printf("test: FAST    -> ARCHIVE\n");
   
-  ret = om.Create(ObjectMover::FAST, object_fa, object_fa);
+  ret = om.Create(ObjectMover::FAST, object_fa, bl);
   assert(ret == 0);
   //read(io_ctx_storage, object_fa, object_fa);
 
@@ -135,7 +138,7 @@ int main() {
 
   printf("test: SLOW    -> FAST   \n");
   
-  ret = om.Create(ObjectMover::SLOW, object_sf, object_sf);
+  ret = om.Create(ObjectMover::SLOW, object_sf, bl);
   assert(ret == 0);
   //read(io_ctx_storage, object_sf, object_sf);
 
@@ -147,7 +150,7 @@ int main() {
 
   printf("test: SLOW    -> SLOW   \n");
   
-  ret = om.Create(ObjectMover::SLOW, object_ss, object_ss);
+  ret = om.Create(ObjectMover::SLOW, object_ss, bl);
   assert(ret == 0);
   //read(io_ctx_storage, object_ss, object_ss);
 
@@ -159,7 +162,7 @@ int main() {
 
   printf("test: SLOW    -> ARCHIVE\n");
   
-  ret = om.Create(ObjectMover::SLOW, object_sa, object_sa);
+  ret = om.Create(ObjectMover::SLOW, object_sa, bl);
   assert(ret == 0);
   //read(io_ctx_storage, object_sa, object_sa);
 
@@ -171,7 +174,7 @@ int main() {
 
   printf("test: ARCHIVE -> FAST   \n");
 
-  ret = om.Create(ObjectMover::ARCHIVE, object_af, object_af);
+  ret = om.Create(ObjectMover::ARCHIVE, object_af, bl);
   assert(ret == 0);
   //read(io_ctx_storage, object_af, object_af);
 
@@ -183,7 +186,7 @@ int main() {
 
   printf("test: ARCHIVE -> SLOW   \n");
 
-  ret = om.Create(ObjectMover::ARCHIVE, object_as, object_as);
+  ret = om.Create(ObjectMover::ARCHIVE, object_as, bl);
   assert(ret == 0);
   //read(io_ctx_storage, object_as, object_as);
 
@@ -195,7 +198,7 @@ int main() {
 
   printf("test: ARCHIVE -> ARCHIVE\n");
   
-  ret = om.Create(ObjectMover::ARCHIVE, object_aa, object_aa);
+  ret = om.Create(ObjectMover::ARCHIVE, object_aa, bl);
   assert(ret == 0);
   //read(io_ctx_storage, object_aa, object_aa);
 

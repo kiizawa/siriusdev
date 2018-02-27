@@ -75,7 +75,10 @@ int main() {
 
   /* Create an object in Fast Tier (SSD) */
   std::string object("foo");
-  ret = om.Create(ObjectMover::FAST, object, "bar");
+  librados::bufferlist bl;
+  bl.append("bar");
+
+  ret = om.Create(ObjectMover::FAST, object, bl);
   assert(ret == 0);
 
   /* Move the object to Archive Tier (Tape Drive) */
