@@ -359,7 +359,7 @@ void ObjectMover::Delete(const std::string &object_name, int *err) {
   completion->wait_for_safe();
   r = completion->get_return_value();
   completion->release();
-  if (r == ECANCELED) {
+  if (r == -ENOENT) {
     r = 0;
   }
   *err = r;
