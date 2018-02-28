@@ -46,7 +46,7 @@ public:
    * @param object_name the name of the object
    */
   void Move(Tier tier, const std::string &object_name, int *err);
-  void MoveAsync(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err) {
+  void MoveAsync(Tier tier, const std::string &object_name, int *err) {
     auto f = std::bind(&ObjectMover::Move, this, tier, object_name, err);
     ios_.post(f);
   }
