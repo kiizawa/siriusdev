@@ -71,18 +71,28 @@ int main() {
   }
   
   /* Initialize a Object Mover */
-  ObjectMover om(&cluster, &io_ctx_storage, &io_ctx_archive);
+
+  /**
+   * Operations on obejcts can be executed asynchronously by background threads.
+   * thread_pool_size controls the parallelism.
+   */
+  int thread_pool_size = 128;
+  ObjectMover om(&cluster, &io_ctx_storage, &io_ctx_archive, thread_pool_size);
 
   /* Create an object in Fast Tier (SSD) */
   std::string object("foo");
   librados::bufferlist bl;
   bl.append("bar");
 
-  om.Create(ObjectMover::FAST, object, bl, &ret);
+  ret = 1;
+  om.CreateAsync(ObjectMover::FAST, object, bl, &ret);
+  while (ret == 1);
   assert(ret == 0);
 
   /* Move the object to Archive Tier (Tape Drive) */
-  om.Move(ObjectMover::ARCHIVE, object, &ret);
+  ret = 1;
+  om.MoveAsync(ObjectMover::ARCHIVE, object, &ret);
+  while (ret == 1);
   assert(ret == 0);
 
   /**
@@ -102,10 +112,12 @@ int main() {
   ret = io_ctx_storage.read(object, buf2, 0, 0);
   std::string result(buf2.c_str(), buf2.length());
   assert(result == "baz");
-  
+
   /* Delete the object */
-  om.Delete(object, &ret);
+  ret = 1;
+  om.DeleteAsync(object, &ret);
+  while (ret == 1);
   assert(ret == 0);
-  
+
   return 0;
 }
