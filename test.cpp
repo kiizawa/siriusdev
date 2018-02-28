@@ -102,11 +102,15 @@ int main() {
 
   printf("test: FAST    -> FAST   \n");
 
-  om.Create(ObjectMover::FAST, object_ff, bl, &ret);
+  ret = 1;
+  om.CreateAsync(ObjectMover::FAST, object_ff, bl, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_ff, object_ff);
 
-  om.Move(ObjectMover::FAST, object_ff, &ret);
+  ret = 1;
+  om.MoveAsync(ObjectMover::FAST, object_ff, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_ff, object_ff);
 
@@ -114,11 +118,15 @@ int main() {
 
   printf("test: FAST    -> SLOW   \n");
 
-  om.Create(ObjectMover::FAST, object_fs, bl, &ret);
+  ret = 1;
+  om.CreateAsync(ObjectMover::FAST, object_fs, bl, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_fs, object_fs);
 
-  om.Move(ObjectMover::SLOW, object_fs, &ret);
+  ret = 1;
+  om.MoveAsync(ObjectMover::SLOW, object_fs, &ret);
+  while(ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_fs, object_fs);
 
@@ -126,11 +134,15 @@ int main() {
 
   printf("test: FAST    -> ARCHIVE\n");
 
-  om.Create(ObjectMover::FAST, object_fa, bl, &ret);
+  ret = 1;
+  om.CreateAsync(ObjectMover::FAST, object_fa, bl, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_fa, object_fa);
 
-  om.Move(ObjectMover::ARCHIVE, object_fa, &ret);
+  ret = 1;
+  om.MoveAsync(ObjectMover::ARCHIVE, object_fa, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_fa, object_fa);
   
@@ -138,11 +150,15 @@ int main() {
 
   printf("test: SLOW    -> FAST   \n");
 
-  om.Create(ObjectMover::SLOW, object_sf, bl, &ret);
+  ret = 1;
+  om.CreateAsync(ObjectMover::SLOW, object_sf, bl, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_sf, object_sf);
 
-  om.Move(ObjectMover::FAST, object_sf, &ret);
+  ret = 1;
+  om.MoveAsync(ObjectMover::FAST, object_sf, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_sf, object_sf);
 
@@ -150,11 +166,15 @@ int main() {
 
   printf("test: SLOW    -> SLOW   \n");
 
-  om.Create(ObjectMover::SLOW, object_ss, bl, &ret);
+  ret = 1;
+  om.CreateAsync(ObjectMover::SLOW, object_ss, bl, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_ss, object_ss);
 
-  om.Move(ObjectMover::SLOW, object_ss, &ret);
+  ret = 1;
+  om.MoveAsync(ObjectMover::SLOW, object_ss, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_ss, object_ss);
 
@@ -162,11 +182,15 @@ int main() {
 
   printf("test: SLOW    -> ARCHIVE\n");
   
-  om.Create(ObjectMover::SLOW, object_sa, bl, &ret);
+  ret = 1;
+  om.CreateAsync(ObjectMover::SLOW, object_sa, bl, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_sa, object_sa);
 
-  om.Move(ObjectMover::ARCHIVE, object_sa, &ret);
+  ret = 1;
+  om.MoveAsync(ObjectMover::ARCHIVE, object_sa, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_sa, object_sa);
   
@@ -174,11 +198,15 @@ int main() {
 
   printf("test: ARCHIVE -> FAST   \n");
 
-  om.Create(ObjectMover::ARCHIVE, object_af, bl, &ret);
+  ret = 1;
+  om.CreateAsync(ObjectMover::ARCHIVE, object_af, bl, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_af, object_af);
 
-  om.Move(ObjectMover::FAST, object_af, &ret);
+  ret = 1;
+  om.MoveAsync(ObjectMover::FAST, object_af, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_af, object_af);
 
@@ -186,11 +214,15 @@ int main() {
 
   printf("test: ARCHIVE -> SLOW   \n");
 
-  om.Create(ObjectMover::ARCHIVE, object_as, bl, &ret);
+  ret = 1;
+  om.CreateAsync(ObjectMover::ARCHIVE, object_as, bl, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_as, object_as);
 
-  om.Move(ObjectMover::SLOW, object_as, &ret);
+  ret = 1;
+  om.MoveAsync(ObjectMover::SLOW, object_as, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_as, object_as);
 
@@ -198,41 +230,63 @@ int main() {
 
   printf("test: ARCHIVE -> ARCHIVE\n");
   
-  om.Create(ObjectMover::ARCHIVE, object_aa, bl, &ret);
+  ret = 1;
+  om.CreateAsync(ObjectMover::ARCHIVE, object_aa, bl, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_aa, object_aa);
 
-  om.Move(ObjectMover::ARCHIVE, object_aa, &ret);
+  ret = 1;
+  om.MoveAsync(ObjectMover::ARCHIVE, object_aa, &ret);
+  while (ret == 1);
   assert(ret == 0);
   //read(io_ctx_storage, object_aa, object_aa);
 
   // delete all the objects
 
-  om.Delete(object_ff, &ret);
+  ret = 1;
+  om.DeleteAsync(object_ff, &ret);
+  while (ret == 1);
   assert(ret == 0);
 
-  om.Delete(object_fs, &ret);
+  ret = 1;
+  om.DeleteAsync(object_fs, &ret);
+  while (ret == 1);
   assert(ret == 0);
 
-  om.Delete(object_fa, &ret);
+  ret = 1;
+  om.DeleteAsync(object_fa, &ret);
+  while (ret == 1);
   assert(ret == 0);
 
-  om.Delete(object_sf, &ret);
+  ret = 1;
+  om.DeleteAsync(object_sf, &ret);
+  while (ret == 1);
   assert(ret == 0);
 
-  om.Delete(object_ss, &ret);
+  ret = 1;
+  om.DeleteAsync(object_ss, &ret);
+  while (ret == 1);
   assert(ret == 0);
 
-  om.Delete(object_sa, &ret);
+  ret = 1;
+  om.DeleteAsync(object_sa, &ret);
+  while (ret == 1);
   assert(ret == 0);
 
-  om.Delete(object_af, &ret);
+  ret = 1;
+  om.DeleteAsync(object_af, &ret);
+  while (ret == 1);
   assert(ret == 0);
 
-  om.Delete(object_as, &ret);
+  ret = 1;
+  om.DeleteAsync(object_as, &ret);
+  while (ret == 1);
   assert(ret == 0);
 
-  om.Delete(object_aa, &ret);
+  ret = 1;
+  om.DeleteAsync(object_aa, &ret);
+  while (ret == 1);
   assert(ret == 0);
 
   return 0;
