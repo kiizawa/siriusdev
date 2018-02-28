@@ -206,5 +206,34 @@ int main() {
   assert(ret == 0);
   //read(io_ctx_storage, object_aa, object_aa);
 
+  // delete all the objects
+
+  om.Delete(object_ff, &ret);
+  assert(ret == 0);
+
+  om.Delete(object_fs, &ret);
+  assert(ret == 0);
+
+  om.Delete(object_fa, &ret);
+  assert(ret == 0);
+
+  om.Delete(object_sf, &ret);
+  assert(ret == 0);
+
+  om.Delete(object_ss, &ret);
+  assert(ret == 0);
+
+  om.Delete(object_sa, &ret);
+  assert(ret == 0);
+
+  om.Delete(object_af, &ret);
+  assert(ret == 0);
+
+  om.Delete(object_as, &ret);
+  assert(ret == 0);
+
+  om.Delete(object_aa, &ret);
+  assert(ret == 0);
+
   return 0;
 }
