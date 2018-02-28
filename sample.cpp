@@ -78,11 +78,11 @@ int main() {
   librados::bufferlist bl;
   bl.append("bar");
 
-  ret = om.Create(ObjectMover::FAST, object, bl);
+  om.Create(ObjectMover::FAST, object, bl, &ret);
   assert(ret == 0);
 
   /* Move the object to Archive Tier (Tape Drive) */
-  ret = om.Move(ObjectMover::ARCHIVE, object);
+  om.Move(ObjectMover::ARCHIVE, object, &ret);
   assert(ret == 0);
 
   /**
@@ -104,7 +104,7 @@ int main() {
   assert(result == "baz");
   
   /* Delete the object */
-  ret = om.Delete(object);
+  om.Delete(object, &ret);
   assert(ret == 0);
   
   return 0;

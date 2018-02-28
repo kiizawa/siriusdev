@@ -1,13 +1,26 @@
 #include <rados/librados.hpp>
 #include "object_mover.hpp"
 
-int ObjectMover::Create(Tier tier, const std::string &object_name, const std::string &value) {
-  librados::bufferlist bl;
-  bl.append(value);
-  return Create(tier, object_name, bl);
+ObjectMover::ObjectMover(librados::Rados *cluster,
+			 librados::IoCtx *io_ctx_storage,
+			 librados::IoCtx *io_ctx_archive,
+			 int thread_pool_size)
+  : cluster_(cluster),
+    io_ctx_storage_(io_ctx_storage),
+    io_ctx_archive_(io_ctx_archive)
+{
+  w_ = new boost::asio::io_service::work(ios_);
+  for (int i = 0; i < thread_pool_size; ++i) {
+    thr_grp_.create_thread(boost::bind(&boost::asio::io_service::run, &ios_));
+  }
 }
 
-int ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl) {
+ObjectMover::~ObjectMover() {
+  delete w_;
+  thr_grp_.join_all();
+}
+
+void ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err) {
   int r = 0;
   switch(tier) {
   case FAST:
@@ -97,10 +110,10 @@ int ObjectMover::Create(Tier tier, const std::string &object_name, const librado
   default:
     abort();
   }
-  return r;
+  *err = r;
 }
 
-int ObjectMover::Move(Tier tier, const std::string &object_name) {
+void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
   int r = 0;
   switch(tier) {
   case FAST:
@@ -126,7 +139,8 @@ int ObjectMover::Move(Tier tier, const std::string &object_name) {
 	if (r != 0) {
 	  Unlock(object_name);
 	  printf("remove failed r=%d\n", r);
-	  return r;
+	  *err = r;
+	  return;
 	}
 	// TODO: the following operations are not atomic!
 	// promote the objcet to Storage Pool
@@ -248,7 +262,7 @@ int ObjectMover::Move(Tier tier, const std::string &object_name) {
   default:
     abort();
   }
-  return r;
+  *err = r;
 }
 
 int ObjectMover::GetLocation(const std::string &object_name) {
@@ -318,7 +332,7 @@ void ObjectMover::Unlock(const std::string &object_name) {
   assert(r == 0);
 }
 
-int ObjectMover::Delete(const std::string &object_name) {
+void ObjectMover::Delete(const std::string &object_name, int *err) {
   int r;
 
   // Remove the object in Storage Pool.
@@ -332,7 +346,8 @@ int ObjectMover::Delete(const std::string &object_name) {
   completion->release();
   if (r != 0) {
     printf("remove failed r=%d\n", r);
-    return r;
+    *err = r;
+    return;
   }
 
   // If the object exists in Archive Pool, remove it too.
@@ -347,5 +362,6 @@ int ObjectMover::Delete(const std::string &object_name) {
   if (r == ECANCELED) {
     r = 0;
   }
-  return r;
+  *err = r;
+  return;
 }
