@@ -18,17 +18,20 @@ done
 # 1. master
 
 sudo apt-get install -y nfs-kernel-server
-sudo mkdir -p /opt/nfs
-sudo su -c "echo '/opt/nfs *(rw,sync,no_subtree_check,no_root_squash)' >> /etc/exports"
-sudo exportfs -ra
-sudo service nfs-kernel-server start
+if [ ! -e /opt/nfs ]
+then
+    sudo mkdir -p /opt/nfs
+    sudo su -c "echo '/opt/nfs *(rw,sync,no_subtree_check,no_root_squash)' >> /etc/exports"
+    sudo exportfs -ra
+    sudo service nfs-kernel-server start
+fi
 
 # 2. slave
 
 for SLAVE_NODE in $SLAVE_CLOUDLAB_NODES
 do
     ssh $SLAVE_NODE "sudo apt-get install -y nfs-common"
-    ssh $SLAVE_NODE "mkdir /tmp/share"
+    ssh $SLAVE_NODE "if [ ! -e /tmp/share ]; then mkdir /tmp/share; fi"
     ssh $SLAVE_NODE "sudo mount -t nfs node-0:/opt/nfs /tmp/share"
     ssh $SLAVE_NODE "sudo chmod a+w /tmp/share"
 done
