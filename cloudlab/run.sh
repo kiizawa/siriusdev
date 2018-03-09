@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -ex
+
 # Generall Settings
 
 MASTER_NODE="node-0"

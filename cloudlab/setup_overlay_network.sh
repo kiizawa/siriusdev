@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -ex
+
 if [ `hostname` = "node-1" ]
 then
     cd /tmp
