@@ -2,14 +2,16 @@
 
 # Generall Settings
 
-sudo apt-get update
-
 MASTER_NODE="node-0"
 SLAVE_NODES="node-1 node-2 node-3 node-4 node-5 node-6"
 
+sudo apt-get update
+sudo sh -c 'hostname $MASTER_NODE'
+
 for SLAVE_NODE in $SLAVE_NODES
 do
-    ssh $SLAVE_NODE sudo sh -c 'hostname $SLAVE_NODE'
+    ssh $SLAVE_NODE sudo sh -c 'apt-get update'
+    ssh $SLAVE_NODE 'sudo hostname `hostname | cut -d . -f 1`'
 done
 
 # Setup NFS
