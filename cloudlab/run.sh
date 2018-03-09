@@ -37,7 +37,7 @@ do
     ssh $SLAVE_NODE "sudo chmod a+w /tmp/share"
 done
 
-# Setup etcd
+# Setup overlay network
 
 for SLAVE_NODE in $SLAVE_NODES
 do
