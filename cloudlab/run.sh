@@ -42,5 +42,5 @@ done
 for SLAVE_NODE in $SLAVE_NODES
 do
     scp setup_overlay_network.sh $SLAVE_NODE:/tmp
-    ssh $SLAVE_NODE sudo sh -c '/tmp/setup_overlay_network.sh'
+    ssh $SLAVE_NODE /tmp/setup_overlay_network.sh
 done
