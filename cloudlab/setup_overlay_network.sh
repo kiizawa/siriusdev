@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ `hostname` == "node-1" ]
+if [ `hostname` = "node-1" ]
 then
     cd /tmp
     curl -L  https://github.com/coreos/etcd/releases/download/v2.3.4/etcd-v2.3.4-linux-amd64.tar.gz -o etcd-v2.3.4-\linux-amd64.tar.gz
@@ -24,5 +24,5 @@ do
     fi
 done
 
-sudo sh -c 'echo DOCKER_OPTS=\"--cluster-store=etcd://10.10.1.2:2379 --cluster-advertise=$CEPH_IF:2376\" >> /etc/default/docker'
+sudo env CEPH_IF=$CEPH_IF sh -c 'echo DOCKER_OPTS=\"--cluster-store=etcd://10.10.1.2:2379 --cluster-advertise=$CEPH_IF:2376\" >> /etc/default/docker'
 sudo service docker restart
