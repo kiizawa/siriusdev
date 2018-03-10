@@ -9,7 +9,7 @@ then
     tar xzvf etcd-v2.3.4-linux-amd64.tar.gz
     sudo chmod a+w etcd-v2.3.4-linux-amd64
     cd etcd-v2.3.4-linux-amd64
-    nohup ./etcd -listen-client-urls "http://10.10.1.2:2379" -advertise-client-urls "http://10.10.1.2:2379" /dev/null 2>&1 &
+    nohup ./etcd -listen-client-urls "http://10.10.1.2:2379" -advertise-client-urls "http://10.10.1.2:2379">  /dev/null 2>&1 &
 fi
 
 IFs="eth0 eth1 eth2 eth3"
