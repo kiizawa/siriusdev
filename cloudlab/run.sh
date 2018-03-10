@@ -8,7 +8,7 @@ MASTER_NODE="node-0"
 SLAVE_NODES="node-1 node-2 node-3 node-4"
 
 sudo apt-get update
-sudo sh -c 'hostname $MASTER_NODE'
+sudo hostname $MASTER_NODE
 
 for SLAVE_NODE in $SLAVE_NODES
 do
