@@ -46,3 +46,11 @@ do
     scp setup_overlay_network.sh $SLAVE_NODE:/tmp
     ssh $SLAVE_NODE sh -c "/tmp/setup_overlay_network.sh"
 done
+
+# Start docker containers
+
+for SLAVE_NODE in $SLAVE_NODES
+do
+    scp create_container.sh $SLAVE_NODE:/tmp
+    ssh $SLAVE_NODE sh -c "/tmp/create_container.sh"
+done
