@@ -2,14 +2,14 @@
 
 set -ex
 
-if [ `hostname` = "node-1" ]
+if [ `hostname` = "node-0" ]
 then
     cd /tmp
     curl -L  https://github.com/coreos/etcd/releases/download/v2.3.4/etcd-v2.3.4-linux-amd64.tar.gz -o etcd-v2.3.4-\linux-amd64.tar.gz
     tar xzvf etcd-v2.3.4-linux-amd64.tar.gz
     sudo chmod a+w etcd-v2.3.4-linux-amd64
     cd etcd-v2.3.4-linux-amd64
-    nohup ./etcd -listen-client-urls "http://10.10.1.2:2379" -advertise-client-urls "http://10.10.1.2:2379">  /dev/null 2>&1 &
+    nohup ./etcd -listen-client-urls "http://10.10.1.1:2379" -advertise-client-urls "http://10.10.1.1:2379">  /dev/null 2>&1 &
 fi
 
 IFs="eth0 eth1 eth2 eth3"
@@ -27,10 +27,10 @@ do
     fi
 done
 
-sudo env CEPH_IF=$CEPH_IF sh -c 'echo DOCKER_OPTS=\"--cluster-store=etcd://10.10.1.2:2379 --cluster-advertise=$CEPH_IF:2376\" >> /etc/default/docker'
+sudo env CEPH_IF=$CEPH_IF sh -c 'echo DOCKER_OPTS=\"--cluster-store=etcd://10.10.1.1:2379 --cluster-advertise=$CEPH_IF:2376\" >> /etc/default/docker'
 sudo service docker restart
 
-if [ `hostname` = "node-1" ]
+if [ `hostname` = "node-0" ]
 then
     docker network create -d overlay --subnet=192.168.0.0/16 cephnet
 fi

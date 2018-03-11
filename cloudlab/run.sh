@@ -6,6 +6,7 @@ set -ex
 
 MASTER_NODE="node-0"
 SLAVE_NODES="node-1 node-2 node-3 node-4"
+ALL_NODES=$MASTER_NODE" "$SLAVE_NODES
 
 sudo apt-get update
 sudo hostname $MASTER_NODE
@@ -21,10 +22,10 @@ done
 ## 1. master
 
 sudo apt-get install -y nfs-kernel-server
-if [ ! -e /opt/nfs ]
+if [ ! -e /tmp/share ]
 then
-    sudo mkdir -p /opt/nfs
-    sudo su -c "echo '/opt/nfs *(rw,sync,no_subtree_check,no_root_squash)' >> /etc/exports"
+    sudo mkdir -p /tmp/share
+    sudo su -c "echo '/tmp/share *(rw,sync,no_subtree_check,no_root_squash)' >> /etc/exports"
     sudo exportfs -ra
     sudo service nfs-kernel-server start
 fi
@@ -35,22 +36,22 @@ for SLAVE_NODE in $SLAVE_NODES
 do
     ssh $SLAVE_NODE "sudo apt-get install -y nfs-common"
     ssh $SLAVE_NODE "if [ ! -e /tmp/share ]; then mkdir /tmp/share; fi"
-    ssh $SLAVE_NODE "sudo mount -t nfs node-0:/opt/nfs /tmp/share"
+    ssh $SLAVE_NODE "sudo mount -t nfs node-0:/tmp/share /tmp/share"
     ssh $SLAVE_NODE "sudo chmod a+w /tmp/share"
 done
 
 # Setup overlay network
 
-for SLAVE_NODE in $SLAVE_NODES
+for NODE in $ALL_NODES
 do
-    scp setup_overlay_network.sh $SLAVE_NODE:/tmp
-    ssh $SLAVE_NODE sh -c "/tmp/setup_overlay_network.sh"
+    scp setup_overlay_network.sh $NODE:/tmp
+    ssh $NODE sh -c "/tmp/setup_overlay_network.sh"
 done
 
 # Start docker containers
 
-for SLAVE_NODE in $SLAVE_NODES
+for NODE in $ALL_NODES
 do
-    scp create_container.sh $SLAVE_NODE:/tmp
-    ssh $SLAVE_NODE sh -c "/tmp/create_container.sh"
+    scp create_container.sh $NODE:/tmp
+    ssh $NODE sh -c "/tmp/create_container.sh"
 done
