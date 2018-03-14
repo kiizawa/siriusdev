@@ -38,7 +38,7 @@ then
     RUN_OSD=1
     POOL="storage_pool"
     OSD_TYPE="bluestore"
-    DEVICE_ARGS="-e BS_SLOW_BD=/dev/sdc"
+    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdc"
     start
 
     HOST_NAME=`hostname`"-docker-hdd"
@@ -47,7 +47,7 @@ then
     RUN_OSD=1
     POOL="archive_pool"
     OSD_TYPE="bluestore"
-    DEVICE_ARGS="-e BS_SLOW_BD=/dev/sdb"
+    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdb"
     start
 fi
 
@@ -59,7 +59,7 @@ then
     RUN_OSD=1
     POOL="storage_pool"
     OSD_TYPE="bluestore"
-    DEVICE_ARGS="-e BS_SLOW_BD=/dev/sdc"
+    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdc"
     start
 
     HOST_NAME=`hostname`"-docker-hdd"
@@ -68,7 +68,7 @@ then
     RUN_OSD=1
     POOL="archive_pool"
     OSD_TYPE="bluestore"
-    DEVICE_ARGS="-e BS_SLOW_BD=/dev/sdb"
+    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdb"
     start
 fi
 
@@ -80,7 +80,7 @@ then
     RUN_OSD=1
     POOL="storage_pool"
     OSD_TYPE="bluestore"
-    DEVICE_ARGS="-e BS_SLOW_BD=/dev/sdc"
+    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdc"
     start
 
     HOST_NAME=`hostname`"-docker-hdd"
@@ -89,7 +89,7 @@ then
     RUN_OSD=1
     POOL="archive_pool"
     OSD_TYPE="bluestore"
-    DEVICE_ARGS="-e BS_SLOW_BD=/dev/sdb"
+    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdb"
     start
 fi
 
@@ -101,7 +101,7 @@ then
     RUN_OSD=1
     POOL="storage_pool"
     OSD_TYPE="bluestore"
-    DEVICE_ARGS="-e BS_SLOW_BD=/dev/sdc"
+    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdc"
     start
 
     HOST_NAME=`hostname`"-docker-hdd"
@@ -110,6 +110,6 @@ then
     RUN_OSD=1
     POOL="archive_pool"
     OSD_TYPE="bluestore"
-    DEVICE_ARGS="-e BS_SLOW_BD=/dev/sdb"
+    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdb"
     start
 fi

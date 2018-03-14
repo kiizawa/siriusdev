@@ -54,4 +54,6 @@ for NODE in $ALL_NODES
 do
     scp create_container.sh $NODE:/tmp
     ssh $NODE sh -c "/tmp/create_container.sh"
+    #scp create_container_pool_based.sh $NODE:/tmp
+    #ssh $NODE sh -c "/tmp/create_container_pool_based.sh"
 done
