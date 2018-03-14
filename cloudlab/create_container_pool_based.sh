@@ -34,7 +34,7 @@ if [ `hostname` = "node-1" ]
 then
     HOST_NAME=`hostname`"-docker-ssd"
     HOST_ADDR="192.168.0.11"
-    RUN_MON=1
+    RUN_MON=0
     RUN_OSD=1
     POOL="storage_pool"
     OSD_TYPE="bluestore"
@@ -55,7 +55,7 @@ if [ `hostname` = "node-2" ]
 then
     HOST_NAME=`hostname`"-docker-ssd"
     HOST_ADDR="192.168.0.13"
-    RUN_MON=1
+    RUN_MON=0
     RUN_OSD=1
     POOL="storage_pool"
     OSD_TYPE="bluestore"
@@ -76,7 +76,7 @@ if [ `hostname` = "node-3" ]
 then
     HOST_NAME=`hostname`"-docker-ssd"
     HOST_ADDR="192.168.0.15"
-    RUN_MON=1
+    RUN_MON=0
     RUN_OSD=1
     POOL="storage_pool"
     OSD_TYPE="bluestore"
@@ -97,7 +97,7 @@ if [ `hostname` = "node-4" ]
 then
     HOST_NAME=`hostname`"-docker-ssd"
     HOST_ADDR="192.168.0.17"
-    RUN_MON=1
+    RUN_MON=0
     RUN_OSD=1
     POOL="storage_pool"
     OSD_TYPE="bluestore"
