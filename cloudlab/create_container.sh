@@ -4,6 +4,39 @@ set -ex
 
 NODES="node-0 node-1 node-2 node-3 node-4"
 
+DOCKER_IMAGE=kiizawa/siriusdev
+
+# Install docker image
+
+need_to_install=0
+
+for NODE in $NODES
+do
+    ssh -f $NODE 'docker pull $DOCKER_IMAGE'
+    need_to_install=`expr $need_to_install + 1`
+done
+
+installed=0
+
+while true
+do
+    for NODE in $NODES
+    do
+	DONE=`ssh $NODE 'docker images' | grep $DOCKER_IMAGE`
+	if [ -n "$DONE" ]
+	then
+	    echo "docker image installed on $NODE!"
+	    installed=`expr $installed + 1`
+	fi
+    done
+    if [ $installed -eq $need_to_install ]
+    then
+	echo "docker image installed on all nodes!"
+	break
+    fi
+    sleep 10
+done
+
 declare -A IP_ADDRS
 IP_ADDRS=(
 ["node-0"]="192.168.0.10"
@@ -50,6 +83,5 @@ OSD_TYPE="bluestore"
 DEVICE_ARGS="-e BS_FAST_BD=/dev/sdc -e BS_SLOW_BD=/dev/sdb"
 POOL="storage_pool"
 CEPH_NET=192.168.0.0/16
-DOCKER_IMAGE=kiizawa/siriusdev
 
 start
