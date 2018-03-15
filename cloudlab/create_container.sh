@@ -2,40 +2,43 @@
 
 set -ex
 
+HOST=`hostname`
 NODES="node-0 node-1 node-2 node-3 node-4"
 
 DOCKER_IMAGE=kiizawa/siriusdev
 
 # Install docker image
 
-need_to_install=0
+if [ $HOST = "node-0" ]
+then
 
-for NODE in $NODES
-do
-    ssh -f $NODE 'docker pull $DOCKER_IMAGE'
-    need_to_install=`expr $need_to_install + 1`
-done
-
-installed=0
-
-while true
-do
+    need_to_install=0
     for NODE in $NODES
     do
-	DONE=`ssh $NODE 'docker images' | grep $DOCKER_IMAGE`
-	if [ -n "$DONE" ]
-	then
-	    echo "docker image installed on $NODE!"
-	    installed=`expr $installed + 1`
-	fi
+	ssh -f $NODE 'docker pull $DOCKER_IMAGE'
+	need_to_install=`expr $need_to_install + 1`
     done
-    if [ $installed -eq $need_to_install ]
-    then
-	echo "docker image installed on all nodes!"
-	break
-    fi
-    sleep 10
-done
+
+    installed=0
+    while true
+    do
+	for NODE in $NODES
+	do
+	    DONE=`ssh $NODE 'docker images' | grep $DOCKER_IMAGE`
+	    if [ -n "$DONE" ]
+	    then
+		echo "docker image installed on $NODE!"
+		installed=`expr $installed + 1`
+	    fi
+        done
+        if [ $installed -eq $need_to_install ]
+        then
+	    echo "docker image installed on all nodes!"
+	    break
+        fi
+        sleep 10
+    done
+fi
 
 declare -A IP_ADDRS
 IP_ADDRS=(
@@ -62,15 +65,14 @@ function start() {
 	$DOCKER_IMAGE
 }
 
-NODE=`hostname`
-HOST_NAME=$NODE"-docker"
-HOST_ADDR=${IP_ADDRS[$NODE]}
+HOST_NAME=$HOST"-docker"
+HOST_ADDR=${IP_ADDRS[$HOST]}
 
-if [ $NODE = "node-0" ]
+if [ $HOST = "node-0" ]
 then
     RUN_MON=0
     RUN_OSD=0
-elif [ $NODE = "node-1" ]
+elif [ $HOST = "node-1" ]
 then
     RUN_MON=1
     RUN_OSD=1
