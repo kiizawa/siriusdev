@@ -34,12 +34,14 @@ if [ `hostname` = "node-1" ]
 then
     HOST_NAME=`hostname`"-docker-ssd"
     HOST_ADDR="192.168.0.11"
-    RUN_MON=0
+    RUN_MON=1
     RUN_OSD=1
     POOL="storage_pool"
     OSD_TYPE="bluestore"
     DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdc"
     start
+
+    sleep 5
 
     HOST_NAME=`hostname`"-docker-hdd"
     HOST_ADDR="192.168.0.12"
@@ -62,6 +64,8 @@ then
     DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdc"
     start
 
+    sleep 5
+
     HOST_NAME=`hostname`"-docker-hdd"
     HOST_ADDR="192.168.0.14"
     RUN_MON=0
@@ -83,6 +87,8 @@ then
     DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdc"
     start
 
+    sleep 5
+
     HOST_NAME=`hostname`"-docker-hdd"
     HOST_ADDR="192.168.0.16"
     RUN_MON=0
@@ -103,6 +109,8 @@ then
     OSD_TYPE="bluestore"
     DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdc"
     start
+
+    sleep 5
 
     HOST_NAME=`hostname`"-docker-hdd"
     HOST_ADDR="192.168.0.18"
