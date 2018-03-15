@@ -15,7 +15,7 @@ then
     need_to_install=0
     for NODE in $NODES
     do
-	ssh -f $NODE 'docker pull $DOCKER_IMAGE'
+	ssh -f $NODE "docker pull $DOCKER_IMAGE"
 	need_to_install=`expr $need_to_install + 1`
     done
 
