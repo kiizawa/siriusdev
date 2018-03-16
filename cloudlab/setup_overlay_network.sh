@@ -27,7 +27,7 @@ do
     fi
 done
 
-sudo env sh -c "echo DOCKER_OPTS=\"--cluster-store=etcd://10.10.1.1:2379 --cluster-advertise=$CEPH_IF:2376\" >> /etc/default/docker"
+sudo env CEPH_IF=$CEPH_IF sh -c 'echo DOCKER_OPTS=\"--cluster-store=etcd://10.10.1.1:2379 --cluster-advertise=$CEPH_IF:2376\" >> /etc/default/docker'
 sudo service docker restart
 
 if [ `hostname` = "node-0" ]
