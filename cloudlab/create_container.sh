@@ -19,9 +19,10 @@ then
 	need_to_install=`expr $need_to_install + 1`
     done
 
-    installed=0
     while true
     do
+	set +e
+	installed=0
 	for NODE in $NODES
 	do
 	    DONE=`ssh $NODE 'docker images' | grep $DOCKER_IMAGE`
@@ -31,6 +32,7 @@ then
 		installed=`expr $installed + 1`
 	    fi
         done
+        set -e
         if [ $installed -eq $need_to_install ]
         then
 	    echo "docker image installed on all nodes!"
