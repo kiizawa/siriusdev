@@ -4,6 +4,15 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/thread.hpp>
 
+class Session {
+public:
+  Session();
+  ~Session();
+  librados::Rados cluster_;
+  librados::IoCtx io_ctx_storage_;
+  librados::IoCtx io_ctx_archive_;
+};
+
 /**
  * Wrapper functions for moving Ceph objects across tiers
  */
@@ -17,15 +26,9 @@ public:
   /**
    * Constructor
    *
-   * @param[in] cluster Ceph cluster
-   * @param[in] io_ctx_storage IoCtx associated with Storage Pool
-   * @param[in] io_ctx_archive IoCtx associated with Archive Pool
    * @param[in] thread_pool_size numbuer of threads that execute asynchronous I/Os
    */
-  ObjectMover(librados::Rados *cluster,
-	      librados::IoCtx *io_ctx_storage,
-	      librados::IoCtx *io_ctx_archive,
-	      int thread_pool_size = 32);
+  ObjectMover(int thread_pool_size = 32);
   ~ObjectMover();
   /**
    * Create an object in the specified tier
@@ -77,6 +80,10 @@ public:
   int GetLocation(const std::string &object_name);
 private:
   /**
+   *
+   */
+  std::map<boost::thread::id, Session*> sessions_;
+  /**
    * Lock advisory lock
    *
    * @param object_name the name of the object
@@ -88,9 +95,6 @@ private:
    * @param object_name the name of the object
    */
   void Unlock(const std::string &object_name);
-  librados::Rados *cluster_;
-  librados::IoCtx *io_ctx_storage_;
-  librados::IoCtx *io_ctx_archive_;
   /**/
   boost::asio::io_service ios_;
   boost::asio::io_service::work *w_;

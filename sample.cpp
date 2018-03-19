@@ -77,7 +77,7 @@ int main() {
    * thread_pool_size controls the parallelism.
    */
   int thread_pool_size = 128;
-  ObjectMover om(&cluster, &io_ctx_storage, &io_ctx_archive, thread_pool_size);
+  ObjectMover om(thread_pool_size);
 
   /* Create an object in Fast Tier (SSD) */
   std::string object("foo");

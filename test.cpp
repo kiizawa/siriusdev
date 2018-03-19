@@ -79,7 +79,7 @@ int main() {
   
   // test
 
-  ObjectMover om(&cluster, &io_ctx_storage, &io_ctx_archive);
+  ObjectMover om;
 
   std::string object_ff("FF");
   std::string object_fs("FS");
