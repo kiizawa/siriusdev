@@ -58,6 +58,18 @@ public:
     ios_.post(f);
   }
   /**
+   * Read an object
+   *
+   * @param[in] object_name the name of the object
+   * @param[out] err  0 success
+   * @param[out] err <0 failure
+   */
+  void Read(const std::string &object_name, librados::bufferlist *bl, int *err);
+  void ReadAsync(const std::string &object_name, librados::bufferlist *bl, int *err) {
+    auto f = std::bind(&ObjectMover::Read, this, object_name, bl, err);
+    ios_.post(f);
+  }
+  /**
    * Delete an object
    *
    * @param[in] object_name the name of the object
