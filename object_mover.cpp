@@ -68,6 +68,7 @@ private:
 
 Stats stats_create;
 Stats stats_move;
+Stats stats_read;
 
 #endif /* SHOW_STATS */
 
@@ -157,6 +158,8 @@ ObjectMover::~ObjectMover() {
   stats_create.ShowStats();
   printf("stats (Move)\n");
   stats_move.ShowStats();
+  printf("stats (Read)\n");
+  stats_read.ShowStats();
 #endif /* SHOW_STATS */
 }
 
@@ -258,6 +261,14 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
     abort();
   }
   *err = r;
+}
+
+void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err) {
+#ifdef SHOW_STATS
+  Timer t(&stats_read);
+#endif /* SHOW_STATS */
+  Session *s = sessions_[boost::this_thread::get_id()];
+  *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
 }
 
 void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
