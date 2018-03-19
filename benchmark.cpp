@@ -6,6 +6,7 @@
 
 #define PARALLELISM 128
 #define OBJECT_NUM 10000
+#define WAIT_MSEC 10
 
 int main() {
 
@@ -50,8 +51,7 @@ int main() {
       }
     }
     if (used == PARALLELISM) {
-      printf("go to sleep\n");
-      sleep(1);
+      usleep(WAIT_MSEC*1000);
       goto retry;
     }
   }
