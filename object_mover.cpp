@@ -25,11 +25,13 @@ public:
     }
     std::multiset<int>::const_iterator it2;
     int total = s.size();
+    int latency_sum = 0;
     printf("total=%d\n", total);
     int count = 0;
     bool done_25th, done_50th, done_75th = false;
     for (it2 = s.begin(); it2 != s.end(); it2++) {
       count++;
+      latency_sum += *it2;
       if (done_25th == false && count > 0.25 * total) {
 	printf("25th percentile=%5d\n", *it2);
 	done_25th = true;
@@ -41,6 +43,7 @@ public:
 	done_75th = true;
       }
     }
+    printf("average        =%5d\n", latency_sum/total);
   }
 private:
   boost::mutex m_;
