@@ -5,7 +5,7 @@
 #include "object_mover.hpp"
 
 #define PARALLELISM 128
-#define OBJECT_NUM 1024
+#define OBJECT_NUM 10000
 
 int main() {
 
@@ -23,14 +23,14 @@ int main() {
   /* Create an object in Fast Tier (SSD) */
   librados::bufferlist bl;
   for (int i = 0; i < 1024*1024; i++) {
-    bl.append("ceph");
+    bl.append("ceph1234");
   }
 
   int rets[PARALLELISM];
   for (int i = 0; i < PARALLELISM; i++) {
     rets[i] = 0;
   }
-  for (int i = 11*OBJECT_NUM; i < 12*OBJECT_NUM; i++) {
+  for (int i = 0; i < OBJECT_NUM; i++) {
     std::ostringstream os;
     os << std::setfill('0') << std::setw(10) << i;
     std::string object = os.str();
