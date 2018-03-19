@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
    */
   ObjectMover om(thread_num);
 
-  /* Create an object in Fast Tier (SSD) */
+  /* Create objects in Slow Tier (HDD) */
   librados::bufferlist bl;
   for (int i = 0; i < 1024*1024; i++) {
     bl.append("ceph1234");
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     std::ostringstream os;
     os << std::setfill('0') << std::setw(10) << i;
     std::string object = os.str();
-  retry:
+  retry1:
     int used = 0;
     for (int j = 0; j < thread_num; j++) {
       int ret = rets[j];
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     }
     if (used == thread_num) {
       usleep(WAIT_MSEC*1000);
-      goto retry;
+      goto retry1;
     }
   }
   while (true) {
@@ -90,10 +90,49 @@ int main(int argc, char *argv[]) {
       }
     }
     if (done == thread_num) {
-      printf("all writes done!\n");
+      printf("all creates done!\n");
       break;
     }
   }
 
+  /* Move objects into Fast Tier (SSD) */
+  for (int i = 0; i < object_num; i++) {
+    std::ostringstream os;
+    os << std::setfill('0') << std::setw(10) << i;
+    std::string object = os.str();
+  retry2:
+    int used = 0;
+    for (int j = 0; j < thread_num; j++) {
+      int ret = rets[j];
+      if (ret == 0) {
+	rets[j] = 1;
+	om.MoveAsync(ObjectMover::FAST, object, &rets[j]);
+	// while (rets[j] == 1);
+	// assert(rets[j] == 0);
+	break;
+      } else {
+	used++;
+	assert(ret == 1);
+      }
+    }
+    if (used == thread_num) {
+      usleep(WAIT_MSEC*1000);
+      goto retry2;
+    }
+  }
+  while (true) {
+    int done = 0;
+    for (int j = 0; j < thread_num; j++) {
+      int ret = rets[j];
+      if (ret == 0) {
+	done++;
+      }
+    }
+    if (done == thread_num) {
+      printf("all moves done!\n");
+      break;
+    }
+  }
+  
   return 0;
 }
