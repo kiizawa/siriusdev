@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
     case 'h':
     default:
       printf("Usage: %s [-n objects] [-t threads]\n", argv[0]);
+      exit(0);
       break;
     }
   }
