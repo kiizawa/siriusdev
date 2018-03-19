@@ -67,6 +67,7 @@ private:
 };
 
 Stats stats_create;
+Stats stats_move;
 
 #endif /* SHOW_STATS */
 
@@ -154,6 +155,8 @@ ObjectMover::~ObjectMover() {
 #ifdef SHOW_STATS
   printf("stats (Create)\n");
   stats_create.ShowStats();
+  printf("stats (Move)\n");
+  stats_move.ShowStats();
 #endif /* SHOW_STATS */
 }
 
@@ -258,6 +261,9 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 }
 
 void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
+#ifdef SHOW_STATS
+  Timer t(&stats_move);
+#endif /* SHOW_STATS */
   int r = 0;
   switch(tier) {
   case FAST:
