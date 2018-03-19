@@ -95,7 +95,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  /* Move objects into Fast Tier (SSD) */
+  /* Read objects from Slow Tier (HDD) */
+
+  std::vector<librados::bufferlist*> bls;
+  for (int i = 0; i < thread_num; i++) {
+    bls.push_back(new librados::bufferlist);
+  }
   for (int i = 0; i < object_num; i++) {
     std::ostringstream os;
     os << std::setfill('0') << std::setw(10) << i;
@@ -106,7 +111,8 @@ int main(int argc, char *argv[]) {
       int ret = rets[j];
       if (ret == 0) {
 	rets[j] = 1;
-	om.MoveAsync(ObjectMover::FAST, object, &rets[j]);
+	bls[j]->clear();
+	om.ReadAsync(object, bls[j], &rets[j]);
 	// while (rets[j] == 1);
 	// assert(rets[j] == 0);
 	break;
@@ -129,10 +135,89 @@ int main(int argc, char *argv[]) {
       }
     }
     if (done == thread_num) {
+      printf("all reads (slow) done!\n");
+      break;
+    }
+  }
+
+  /* Move objects into Fast Tier (SSD) */
+  for (int i = 0; i < object_num; i++) {
+    std::ostringstream os;
+    os << std::setfill('0') << std::setw(10) << i;
+    std::string object = os.str();
+  retry3:
+    int used = 0;
+    for (int j = 0; j < thread_num; j++) {
+      int ret = rets[j];
+      if (ret == 0) {
+	rets[j] = 1;
+	om.MoveAsync(ObjectMover::FAST, object, &rets[j]);
+	// while (rets[j] == 1);
+	// assert(rets[j] == 0);
+	break;
+      } else {
+	used++;
+	assert(ret == 1);
+      }
+    }
+    if (used == thread_num) {
+      usleep(WAIT_MSEC*1000);
+      goto retry3;
+    }
+  }
+  while (true) {
+    int done = 0;
+    for (int j = 0; j < thread_num; j++) {
+      int ret = rets[j];
+      if (ret == 0) {
+	done++;
+      }
+    }
+    if (done == thread_num) {
       printf("all moves done!\n");
       break;
     }
   }
-  
+
+  /* Read objects from Fast Tier (SSD) */
+  for (int i = 0; i < object_num; i++) {
+    std::ostringstream os;
+    os << std::setfill('0') << std::setw(10) << i;
+    std::string object = os.str();
+  retry4:
+    int used = 0;
+    for (int j = 0; j < thread_num; j++) {
+      int ret = rets[j];
+      if (ret == 0) {
+	rets[j] = 1;
+	bls[j]->clear();
+	om.ReadAsync(object, bls[j], &rets[j]);
+	// while (rets[j] == 1);
+	// assert(rets[j] == 0);
+	break;
+      } else {
+	used++;
+	assert(ret == 1);
+      }
+    }
+    if (used == thread_num) {
+      usleep(WAIT_MSEC*1000);
+      goto retry4;
+    }
+  }
+  while (true) {
+    int done = 0;
+    for (int j = 0; j < thread_num; j++) {
+      int ret = rets[j];
+      if (ret == 0) {
+	done++;
+      }
+    }
+    if (done == thread_num) {
+      printf("all reads (fast) done!\n");
+      break;
+    }
+  }
+
   return 0;
 }
