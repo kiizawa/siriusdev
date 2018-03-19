@@ -1,6 +1,72 @@
 #include <rados/librados.hpp>
 #include "object_mover.hpp"
 
+//#define SHOW_STATS
+
+#ifdef SHOW_STATS
+
+#include <sys/time.h>
+#include <set>
+#include <vector>
+
+class Stats {
+public:
+  Stats() {}
+  ~Stats() { }
+  void Insert(int t) {
+    boost::mutex::scoped_lock l(m_);
+    latencies_.push_back(t);
+  }
+  void ShowStats() {
+    std::multiset<int> s;
+    std::vector<int>::const_iterator it;
+    for (it = latencies_.begin(); it != latencies_.end(); it++) {
+      s.insert(*it);
+    }
+    std::multiset<int>::const_iterator it2;
+    int total = s.size();
+    printf("total=%d\n", total);
+    int count = 0;
+    bool done_25th, done_50th, done_75th = false;
+    for (it2 = s.begin(); it2 != s.end(); it2++) {
+      count++;
+      if (done_25th == false && count > 0.25 * total) {
+	printf("25th percentile=%5d\n", *it2);
+	done_25th = true;
+      } else if (done_50th == false && count > 0.5 * total) {
+	printf("50th percentile=%5d\n", *it2);
+	done_50th = true;
+      } else if (done_75th == false && count > 0.75 * total) {
+	printf("75th percentile=%5d\n", *it2);
+	done_75th = true;
+      }
+    }
+  }
+private:
+  boost::mutex m_;
+  std::vector<int> latencies_;
+};
+
+class Timer {
+public:
+  Timer(Stats *stats) : stats_(stats) {
+    ::gettimeofday(&start_, NULL);
+  }
+  ~Timer() {
+    ::gettimeofday(&finish_, NULL);
+    int latency_in_msec =
+      (1000*finish_.tv_sec + finish_.tv_usec/1000) - (1000*start_.tv_sec + start_.tv_usec/1000);
+    stats_->Insert(latency_in_msec);
+  }
+private:
+  struct timeval start_, finish_;
+  Stats *stats_;
+};
+
+Stats stats_create;
+
+#endif /* SHOW_STATS */
+
 Session::Session() {
 
   int ret;
@@ -82,9 +148,16 @@ ObjectMover::~ObjectMover() {
   }
   delete w_;
   thr_grp_.join_all();
+#ifdef SHOW_STATS
+  printf("stats (Create)\n");
+  stats_create.ShowStats();
+#endif /* SHOW_STATS */
 }
 
 void ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err) {
+#ifdef SHOW_STATS
+  Timer t(&stats_create);
+#endif /* SHOW_STATS */
   int r = 0;
   switch(tier) {
   case FAST:
