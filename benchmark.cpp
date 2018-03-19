@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 1024*1024; i++) {
     bl.append("ceph1234");
   }
+  int object_size = bl.length();
 
   std::vector<int> rets;
   for (int i = 0; i < thread_num; i++) {
@@ -110,7 +111,7 @@ int main(int argc, char *argv[]) {
     int used = 0;
     for (int j = 0; j < thread_num; j++) {
       int ret = rets[j];
-      if (ret == 0) {
+      if (ret == 0 || ret == object_size) {
 	rets[j] = 1;
 	bls[j]->clear();
 	om.ReadAsync(object, bls[j], &rets[j]);
@@ -189,7 +190,7 @@ int main(int argc, char *argv[]) {
     int used = 0;
     for (int j = 0; j < thread_num; j++) {
       int ret = rets[j];
-      if (ret == 0) {
+      if (ret == 0 || ret == object_size) {
 	rets[j] = 1;
 	bls[j]->clear();
 	om.ReadAsync(object, bls[j], &rets[j]);
