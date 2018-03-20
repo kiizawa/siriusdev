@@ -102,8 +102,6 @@ int main(int argc, char *argv[]) {
     bls.push_back(new librados::bufferlist);
   }
 
-#if 0
-
   /* Read objects from Slow Tier (HDD) */
 
   for (std::vector<int>::iterator it = rets.begin(); it != rets.end() ; it++) {
@@ -121,7 +119,7 @@ int main(int argc, char *argv[]) {
       if (ret == object_size) {
 	rets[j] = 1;
 	bls[j]->clear();
-	om.ReadAsync(object, bls[j], &rets[j]);
+	om.ReadAsync(object, bls[j], &rets[j], false);
 	// while (rets[j] == 1);
 	// assert(rets[j] == 0);
 	break;
@@ -148,8 +146,6 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
-
-#endif
 
   /* Move objects into Fast Tier (SSD) */
 
@@ -212,7 +208,7 @@ int main(int argc, char *argv[]) {
       if (ret == object_size) {
 	rets[j] = 1;
 	bls[j]->clear();
-	om.ReadAsync(object, bls[j], &rets[j]);
+	om.ReadAsync(object, bls[j], &rets[j], true);
 	// while (rets[j] == 1);
 	// assert(rets[j] == 0);
 	break;

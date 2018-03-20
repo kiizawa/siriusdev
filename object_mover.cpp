@@ -1,9 +1,9 @@
 #include <rados/librados.hpp>
 #include "object_mover.hpp"
 
-//#define SHOW_STATS
+#define SHOW_STATS
 
-#ifdef SHOW_STATS
+//#ifdef SHOW_STATS
 
 #include <sys/time.h>
 #include <set>
@@ -68,7 +68,8 @@ private:
 
 Stats stats_create;
 Stats stats_move;
-Stats stats_read;
+Stats stats_read_hdd;
+Stats stats_read_ssd;
 
 #endif /* SHOW_STATS */
 
@@ -156,10 +157,12 @@ ObjectMover::~ObjectMover() {
 #ifdef SHOW_STATS
   printf("stats (Create)\n");
   stats_create.ShowStats();
+  printf("stats (Read from HDD)\n");
+  stats_read_hdd.ShowStats();
   printf("stats (Move)\n");
   stats_move.ShowStats();
-  printf("stats (Read)\n");
-  stats_read.ShowStats();
+  printf("stats (Read from SSD)\n");
+  stats_read_ssd.ShowStats();
 #endif /* SHOW_STATS */
 }
 
@@ -263,12 +266,20 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
   *err = r;
 }
 
-void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err) {
+void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err, bool on_ssd) {
+  if (on_ssd) {
 #ifdef SHOW_STATS
-  Timer t(&stats_read);
+    Timer t(&stats_read_ssd);
 #endif /* SHOW_STATS */
-  Session *s = sessions_[boost::this_thread::get_id()];
-  *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
+    Session *s = sessions_[boost::this_thread::get_id()];
+    *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
+  } else {
+#ifdef SHOW_STATS
+    Timer t(&stats_read_hdd);
+#endif /* SHOW_STATS */
+    Session *s = sessions_[boost::this_thread::get_id()];
+    *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
+  }
 }
 
 void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
