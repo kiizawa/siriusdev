@@ -97,12 +97,19 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  /* Read objects from Slow Tier (HDD) */
-
   std::vector<librados::bufferlist*> bls;
   for (int i = 0; i < thread_num; i++) {
     bls.push_back(new librados::bufferlist);
   }
+
+#if 0
+
+  /* Read objects from Slow Tier (HDD) */
+
+  for (std::vector<int>::iterator it = rets.begin(); it != rets.end() ; it++) {
+    *it = object_size;
+  }
+
   for (int i = 0; i < object_num; i++) {
     std::ostringstream os;
     os << std::setfill('0') << std::setw(10) << i;
@@ -111,7 +118,7 @@ int main(int argc, char *argv[]) {
     int used = 0;
     for (int j = 0; j < thread_num; j++) {
       int ret = rets[j];
-      if (ret == 0 || ret == object_size) {
+      if (ret == object_size) {
 	rets[j] = 1;
 	bls[j]->clear();
 	om.ReadAsync(object, bls[j], &rets[j]);
@@ -132,7 +139,7 @@ int main(int argc, char *argv[]) {
     int done = 0;
     for (int j = 0; j < thread_num; j++) {
       int ret = rets[j];
-      if (ret == 0) {
+      if (ret == object_size) {
 	done++;
       }
     }
@@ -142,7 +149,14 @@ int main(int argc, char *argv[]) {
     }
   }
 
+#endif
+
   /* Move objects into Fast Tier (SSD) */
+
+  for (std::vector<int>::iterator it = rets.begin(); it != rets.end() ; it++) {
+    *it = 0;
+  }
+
   for (int i = 0; i < object_num; i++) {
     std::ostringstream os;
     os << std::setfill('0') << std::setw(10) << i;
@@ -182,6 +196,11 @@ int main(int argc, char *argv[]) {
   }
 
   /* Read objects from Fast Tier (SSD) */
+
+  for (std::vector<int>::iterator it = rets.begin(); it != rets.end() ; it++) {
+    *it = object_size;
+  }
+
   for (int i = 0; i < object_num; i++) {
     std::ostringstream os;
     os << std::setfill('0') << std::setw(10) << i;
@@ -190,7 +209,7 @@ int main(int argc, char *argv[]) {
     int used = 0;
     for (int j = 0; j < thread_num; j++) {
       int ret = rets[j];
-      if (ret == 0 || ret == object_size) {
+      if (ret == object_size) {
 	rets[j] = 1;
 	bls[j]->clear();
 	om.ReadAsync(object, bls[j], &rets[j]);
@@ -211,7 +230,7 @@ int main(int argc, char *argv[]) {
     int done = 0;
     for (int j = 0; j < thread_num; j++) {
       int ret = rets[j];
-      if (ret == 0) {
+      if (ret == object_size) {
 	done++;
       }
     }
@@ -220,6 +239,6 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
-
+  
   return 0;
 }
