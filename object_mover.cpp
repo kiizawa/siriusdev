@@ -1,9 +1,9 @@
 #include <rados/librados.hpp>
 #include "object_mover.hpp"
 
-#define SHOW_STATS
+//#define SHOW_STATS
 
-//#ifdef SHOW_STATS
+#ifdef SHOW_STATS
 
 #include <sys/time.h>
 #include <set>
