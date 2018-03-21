@@ -1,0 +1,10 @@
+[global]
+ioengine=libaio
+iodepth=32
+runtime=180
+direct=1
+bs=8M
+
+[sample]
+filename=/dev/sdb
+rw=randread
