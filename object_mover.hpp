@@ -64,9 +64,9 @@ public:
    * @param[out] err  0 success
    * @param[out] err <0 failure
    */
-  void Read(const std::string &object_name, librados::bufferlist *bl, int *err);
-  void ReadAsync(const std::string &object_name, librados::bufferlist *bl, int *err) {
-    auto f = std::bind(&ObjectMover::Read, this, object_name, bl, err);
+  void Read(const std::string &object_name, librados::bufferlist *bl, int *err, bool on_ssd);
+  void ReadAsync(const std::string &object_name, librados::bufferlist *bl, int *err, bool on_ssd) {
+    auto f = std::bind(&ObjectMover::Read, this, object_name, bl, err, on_ssd);
     ios_.post(f);
   }
   /**
