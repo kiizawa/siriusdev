@@ -18,9 +18,12 @@ int main(int argc, char *argv[]) {
   int object_num = OBJECT_NUM;
   int thread_num = THREAD_NUM;
 
+  ObjectMover::Tier slow_tier = ObjectMover::SLOW;
+  ObjectMover::Tier fast_tier = ObjectMover::FAST;
+
   int opt;
 
-  while ((opt = ::getopt(argc, argv, "n:t:h")) != -1) {
+  while ((opt = ::getopt(argc, argv, "n:t:mph")) != -1) {
     switch (opt) {
     case 'n':
       object_num = ::atoi(optarg);
@@ -28,6 +31,16 @@ int main(int argc, char *argv[]) {
 
     case 't':
       thread_num = ::atoi(optarg);
+      break;
+
+    case 'm':
+      slow_tier = ObjectMover::SLOW;
+      fast_tier = ObjectMover::FAST;
+      break;
+
+    case 'p':
+      slow_tier = ObjectMover::ARCHIVE;
+      fast_tier = ObjectMover::SLOW;
       break;
 
     case 'h':
@@ -69,7 +82,7 @@ int main(int argc, char *argv[]) {
       int ret = rets[j];
       if (ret == 0) {
 	rets[j] = 1;
-	om.CreateAsync(ObjectMover::SLOW, object, bl, &rets[j]);
+	om.CreateAsync(slow_tier, object, bl, &rets[j]);
 	// while (rets[j] == 1);
 	// assert(rets[j] == 0);
 	break;
@@ -163,7 +176,7 @@ int main(int argc, char *argv[]) {
       int ret = rets[j];
       if (ret == 0) {
 	rets[j] = 1;
-	om.MoveAsync(ObjectMover::FAST, object, &rets[j]);
+	om.MoveAsync(fast_tier, object, &rets[j]);
 	// while (rets[j] == 1);
 	// assert(rets[j] == 0);
 	break;
