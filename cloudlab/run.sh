@@ -9,11 +9,15 @@ SLAVE_NODES="node-1 node-2 node-3 node-4"
 ALL_NODES=$MASTER_NODE" "$SLAVE_NODES
 
 sudo apt-get update
+sudo apt install -y dstat
+sudo apt install -y sysstat
 sudo hostname $MASTER_NODE
 
 for SLAVE_NODE in $SLAVE_NODES
 do
     ssh $SLAVE_NODE 'sudo apt-get update'
+    ssh $SLAVE_NODE 'sudo apt install -y dstat'
+    ssh $SLAVE_NODE 'sudo apt install -y sysstat'
     ssh $SLAVE_NODE 'sudo hostname `hostname | cut -d . -f 1`'
 done
 
