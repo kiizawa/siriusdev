@@ -1,7 +1,15 @@
 #include <rados/librados.hpp>
 #include "object_mover.hpp"
 
+//#define DEBUG
 //#define SHOW_STATS
+
+#ifdef DEBUG
+#include <iostream>
+#include <fstream>
+std::ofstream output_file("/dev/shm/log.txt");
+boost::mutex debug_lock;
+#endif /* DEBUG */
 
 #ifdef SHOW_STATS
 
@@ -50,18 +58,36 @@ private:
   std::vector<int> latencies_;
 };
 
+
 class Timer {
 public:
-  Timer(Stats *stats) : stats_(stats) {
+  Timer(Stats *stats, std::string prefix = "") : stats_(stats), prefix_(prefix)  {
     ::gettimeofday(&start_, NULL);
+#ifdef DEBUG
+    const long s = start_.tv_sec;
+    struct tm* time_info = ::localtime(&s);
+    {
+      boost::mutex::scoped_lock l(debug_lock);
+      output_file << prefix_ << " start  " << asctime(time_info);
+    }
+#endif /* DEBUG */
   }
   ~Timer() {
     ::gettimeofday(&finish_, NULL);
     int latency_in_msec =
       (1000*finish_.tv_sec + finish_.tv_usec/1000) - (1000*start_.tv_sec + start_.tv_usec/1000);
     stats_->Insert(latency_in_msec);
+#ifdef DEBUG
+    const long s = finish_.tv_sec;
+    struct tm* time_info = ::localtime(&s);
+    {
+      boost::mutex::scoped_lock l(debug_lock);
+      output_file << prefix_ << " finish " << asctime(time_info);
+    }
+#endif /* DEBUG */
   }
 private:
+  std::string prefix_;
   struct timeval start_, finish_;
   Stats *stats_;
 };
@@ -164,11 +190,14 @@ ObjectMover::~ObjectMover() {
   printf("stats (Read from SSD)\n");
   stats_read_ssd.ShowStats();
 #endif /* SHOW_STATS */
+#ifdef DEBUG
+  output_file.close();
+#endif /* DEBUG */
 }
 
 void ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err) {
 #ifdef SHOW_STATS
-  Timer t(&stats_create);
+  Timer t(&stats_create, object_name + " Create");
 #endif /* SHOW_STATS */
   int r = 0;
   switch(tier) {
@@ -269,13 +298,13 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err, bool on_ssd) {
   if (on_ssd) {
 #ifdef SHOW_STATS
-    Timer t(&stats_read_ssd);
+    Timer t(&stats_read_ssd, object_name + " Read SSD");
 #endif /* SHOW_STATS */
     Session *s = sessions_[boost::this_thread::get_id()];
     *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
   } else {
 #ifdef SHOW_STATS
-    Timer t(&stats_read_hdd);
+    Timer t(&stats_read_hdd, object_name + " Read HDD");
 #endif /* SHOW_STATS */
     Session *s = sessions_[boost::this_thread::get_id()];
     *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
@@ -284,7 +313,7 @@ void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl,
 
 void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
 #ifdef SHOW_STATS
-  Timer t(&stats_move);
+  Timer t(&stats_move, object_name + " Move");
 #endif /* SHOW_STATS */
   int r = 0;
   switch(tier) {
