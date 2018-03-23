@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 
   for (int i = 0; i < object_num; i++) {
     std::ostringstream os;
-    os << std::setfill('0') << std::setw(10) << i;
+    os << "oname" << std::setfill('0') << std::setw(10) << i;
     std::string object = os.str();
   retry2:
     int used = 0;
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
 
   for (int i = 0; i < object_num; i++) {
     std::ostringstream os;
-    os << std::setfill('0') << std::setw(10) << i;
+    os << "oname" << std::setfill('0') << std::setw(10) << i;
     std::string object = os.str();
   retry3:
     int used = 0;
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
 
   for (int i = 0; i < object_num; i++) {
     std::ostringstream os;
-    os << std::setfill('0') << std::setw(10) << i;
+    os << "oname" << std::setfill('0') << std::setw(10) << i;
     std::string object = os.str();
   retry4:
     int used = 0;
