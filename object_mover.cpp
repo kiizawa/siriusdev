@@ -84,6 +84,9 @@ public:
       boost::mutex::scoped_lock l(debug_lock);
       output_file << prefix_ << " finish " << asctime(time_info);
     }
+    if (latency_in_msec >= 10000) {
+      output_file << "warning: " << prefix_ << " took " << latency_in_msec << " [ms]" << std::endl;
+    }
 #endif /* DEBUG */
   }
 private:
