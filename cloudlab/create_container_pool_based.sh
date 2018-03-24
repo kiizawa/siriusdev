@@ -8,6 +8,7 @@ function start() {
 	--net cephnet \
 	--hostname $HOST_NAME \
 	--ip $HOST_ADDR \
+	--shm-size 4096MB \
 	-v /tmp/share:/share \
 	-e CEPH_CONF_DIR=/share \
 	-e RUN_MON=$RUN_MON \
@@ -18,7 +19,7 @@ function start() {
 	$DOCKER_IMAGE
 }
 
-DOCKER_IMAGE=kiizawa/siriusdev
+DOCKER_IMAGE=kiizawa/siriusdev:base8
 CEPH_NET=192.168.0.0/16
 
 if [ `hostname` = "node-0" ]
