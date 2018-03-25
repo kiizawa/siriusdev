@@ -54,6 +54,8 @@ done
 
 # Start docker containers
 
+./install_docker_image.sh
+
 for NODE in $ALL_NODES
 do
     scp create_container.sh $NODE:/tmp
