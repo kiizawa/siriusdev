@@ -3,12 +3,13 @@
 set -ex
 
 function start() {
+    rm -rf /dev/shm/$HOST_NAME; mkdir /dev/shm/$HOST_NAME
     docker run -it -d --privileged  \
 	--name $HOST_NAME \
 	--net cephnet \
 	--hostname $HOST_NAME \
 	--ip $HOST_ADDR \
-	--shm-size 4096MB \
+	-v /dev/shm/$HOST_NAME:/dev/shm \
 	-v /tmp/share:/share \
 	-e CEPH_CONF_DIR=/share \
 	-e RUN_MON=$RUN_MON \
