@@ -130,6 +130,7 @@ then
 OP_THREADS=2
 fi
 
+ROCKSDB_CACHE_FLAG=true
 if [ -z "$BS_CACHE_SIZE" ]
 then
 BS_CACHE_SIZE_HDD=1G
@@ -137,6 +138,10 @@ BS_CACHE_SIZE_SSD=3G
 else
 BS_CACHE_SIZE_HDD=$BS_CACHE_SIZE
 BS_CACHE_SIZE_SSD=$BS_CACHE_SIZE
+if [ $BS_CACHE_SIZE -eq 0 ]
+then
+ROCKSDB_CACHE_FLAG=false
+fi
 fi
 
 cat <<EOF >> $CEPH_CONF
@@ -146,6 +151,8 @@ osd journal = $OSD_JOURNAL
 osd op threads = $OP_THREADS
 bluestore cache size hdd = $BS_CACHE_SIZE_HDD
 bluestore cache size ssd = $BS_CACHE_SIZE_SSD
+rocksdb_cache_index_and_filter_blocks = $ROCKSDB_CACHE_FLAG
+rocksdb_pin_l0_filter_and_index_blocks_in_cache = $ROCKSDB_CACHE_FLAG
 debug ms = 1
 debug osd = 25
 debug objecter = 20
