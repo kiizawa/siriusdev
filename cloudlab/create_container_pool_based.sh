@@ -16,11 +16,14 @@ function start() {
 	-e OSD_TYPE=$OSD_TYPE $DEVICE_ARGS \
 	-e POOL=$POOL \
 	-e CEPH_PUBLIC_NETWORK=$CEPH_NET \
+	$CONFIG_OPTS \
 	$DOCKER_IMAGE
 }
 
-DOCKER_IMAGE=kiizawa/siriusdev:base8
+DOCKER_IMAGE=kiizawa/siriusdev
 CEPH_NET=192.168.0.0/16
+
+CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=128 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
 
 if [ `hostname` = "node-0" ]
 then

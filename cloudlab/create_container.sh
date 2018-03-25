@@ -64,11 +64,14 @@ function start() {
 	-e OSD_TYPE=$OSD_TYPE $DEVICE_ARGS \
 	-e POOL=$POOL \
 	-e CEPH_PUBLIC_NETWORK=$CEPH_NET \
+	$CONFIG_OPTS \
 	$DOCKER_IMAGE
 }
 
 HOST_NAME=$HOST"-docker"
 HOST_ADDR=${IP_ADDRS[$HOST]}
+
+CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=128 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
 
 if [ $HOST = "node-0" ]
 then
