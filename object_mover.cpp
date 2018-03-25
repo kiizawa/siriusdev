@@ -102,6 +102,36 @@ Stats stats_read_ssd;
 
 #endif /* SHOW_STATS */
 
+class Timer2 {
+public:
+  Timer2(std::ofstream *ofs, boost::mutex *lock,
+	 const std::string &oid, const std::string &mode, const std::string &tier)
+    : ofs_(ofs), lock_(lock), oid_(oid), mode_(mode), tier_(tier) {
+    struct timeval start;
+    ::gettimeofday(&start, NULL);
+    int start_msec = 1000*start.tv_sec + start.tv_usec/1000;
+    if (ofs_->is_open()) {
+      boost::mutex::scoped_lock l(*lock_);
+      *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",s," << start_msec;
+    }
+  }
+  ~Timer2() {
+    struct timeval finish;
+    ::gettimeofday(&finish, NULL);
+    int finish_msec = 1000*finish.tv_sec + finish.tv_usec/1000;
+    if (ofs_->is_open()) {
+      boost::mutex::scoped_lock l(*lock_);
+      *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",f," << finish_msec;
+    }
+  }
+private:
+  std::ofstream *ofs_;
+  boost::mutex *lock_;
+  std::string oid_;
+  std::string mode_;
+  std::string tier_;
+};
+
 Session::Session() {
 
   int ret;
@@ -168,11 +198,14 @@ Session::~Session() {
   cluster_.shutdown();
 }
 
-ObjectMover::ObjectMover(int thread_pool_size) {
+ObjectMover::ObjectMover(int thread_pool_size, const std::string &trace_filename) {
   w_ = new boost::asio::io_service::work(ios_);
   for (int i = 0; i < thread_pool_size; ++i) {
     boost::thread* t = thr_grp_.create_thread(boost::bind(&boost::asio::io_service::run, &ios_));
     sessions_.insert(std::make_pair(t->get_id(), new Session));
+  }
+  if (!trace_filename.empty()) {
+    trace_.open(trace_filename);
   }
 }
 
@@ -196,12 +229,13 @@ ObjectMover::~ObjectMover() {
 #ifdef DEBUG
   output_file.close();
 #endif /* DEBUG */
+  if (trace_.is_open()) {
+    trace_.close();
+  }
 }
 
 void ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err) {
-#ifdef SHOW_STATS
-  Timer t(&stats_create, object_name + " Create");
-#endif /* SHOW_STATS */
+  Timer2 t(&trace_, &lock_, object_name, "w", TierToString(tier));
   int r = 0;
   switch(tier) {
   case FAST:
@@ -298,26 +332,14 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
   *err = r;
 }
 
-void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err, bool on_ssd) {
-  if (on_ssd) {
-#ifdef SHOW_STATS
-    Timer t(&stats_read_ssd, object_name + " Read SSD");
-#endif /* SHOW_STATS */
-    Session *s = sessions_[boost::this_thread::get_id()];
-    *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
-  } else {
-#ifdef SHOW_STATS
-    Timer t(&stats_read_hdd, object_name + " Read HDD");
-#endif /* SHOW_STATS */
-    Session *s = sessions_[boost::this_thread::get_id()];
-    *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
-  }
+void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err) {
+  Timer2 t(&trace_, &lock_, object_name, "r", "-");
+  Session *s = sessions_[boost::this_thread::get_id()];
+  *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
 }
 
 void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
-#ifdef SHOW_STATS
-  Timer t(&stats_move, object_name + " Move");
-#endif /* SHOW_STATS */
+  Timer2 t(&trace_, &lock_, object_name, "m", "-");
   int r = 0;
   switch(tier) {
   case FAST:

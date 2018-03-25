@@ -4,6 +4,9 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/thread.hpp>
 
+#include <iostream>
+#include <fstream>
+
 class Session {
 public:
   Session();
@@ -28,7 +31,7 @@ public:
    *
    * @param[in] thread_pool_size numbuer of threads that execute asynchronous I/Os
    */
-  ObjectMover(int thread_pool_size = 32);
+  ObjectMover(int thread_pool_size = 32, const std::string &trace_filename = "");
   ~ObjectMover();
   /**
    * Create an object in the specified tier
@@ -64,9 +67,9 @@ public:
    * @param[out] err  0 success
    * @param[out] err <0 failure
    */
-  void Read(const std::string &object_name, librados::bufferlist *bl, int *err, bool on_ssd);
-  void ReadAsync(const std::string &object_name, librados::bufferlist *bl, int *err, bool on_ssd) {
-    auto f = std::bind(&ObjectMover::Read, this, object_name, bl, err, on_ssd);
+  void Read(const std::string &object_name, librados::bufferlist *bl, int *err);
+  void ReadAsync(const std::string &object_name, librados::bufferlist *bl, int *err) {
+    auto f = std::bind(&ObjectMover::Read, this, object_name, bl, err);
     ios_.post(f);
   }
   /**
@@ -111,6 +114,22 @@ private:
   boost::asio::io_service ios_;
   boost::asio::io_service::work *w_;
   boost::thread_group thr_grp_;
+  /**/
+  std::string TierToString(Tier tier) {
+    switch(tier) {
+    case FAST:
+      return "f";
+    case SLOW:
+      return "s";
+    case ARCHIVE:
+      return "a";
+    default:
+      abort();
+    }
+  }
+  /**/
+  std::ofstream trace_;
+  boost::mutex lock_;
 };
 
 #endif

@@ -19,7 +19,7 @@ enum Mode {
   MOVE
 };
 
-void read(int thread_num, int object_num) {
+void read(const std::string trace_filename, int thread_num, int object_num) {
 
   /* Initialize a Object Mover */
 
@@ -27,7 +27,7 @@ void read(int thread_num, int object_num) {
    * Operations on obejcts can be executed asynchronously by background threads.
    * thread_num controls the parallelism.
    */
-  ObjectMover om(thread_num);
+  ObjectMover om(thread_num, trace_filename);
   
   /* Read objects from Slow Tier (HDD) */
 
@@ -54,7 +54,7 @@ void read(int thread_num, int object_num) {
       if (ret > 0) {
 	rets[j] = 0;
 	bls[j]->clear();
-	om.ReadAsync(object, bls[j], &rets[j], false);
+	om.ReadAsync(object, bls[j], &rets[j]);
 	// while (rets[j] == 1);
 	// assert(rets[j] == 0);
 	break;
@@ -91,7 +91,7 @@ void read(int thread_num, int object_num) {
   }
 }
 
-void write(ObjectMover::Tier tier, int thread_num, int object_num) {
+void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread_num, int object_num) {
 
   /* Initialize a Object Mover */
 
@@ -99,7 +99,7 @@ void write(ObjectMover::Tier tier, int thread_num, int object_num) {
    * Operations on obejcts can be executed asynchronously by background threads.
    * thread_num controls the parallelism.
    */
-  ObjectMover om(thread_num);
+  ObjectMover om(thread_num, trace_filename);
 
   /* Create objects in Slow Tier (HDD) */
 
@@ -158,7 +158,7 @@ void write(ObjectMover::Tier tier, int thread_num, int object_num) {
 
 }
 
-void move(ObjectMover::Tier tier, int thread_num, int object_num) {
+void move(const std::string &trace_filename, ObjectMover::Tier tier, int thread_num, int object_num) {
 
   /* Initialize a Object Mover */
 
@@ -166,7 +166,7 @@ void move(ObjectMover::Tier tier, int thread_num, int object_num) {
    * Operations on obejcts can be executed asynchronously by background threads.
    * thread_num controls the parallelism.
    */
-  ObjectMover om(thread_num);
+  ObjectMover om(thread_num, trace_filename);
 
   /* Move objects into Fast Tier (SSD) */
 
@@ -216,19 +216,19 @@ void move(ObjectMover::Tier tier, int thread_num, int object_num) {
 
 int main(int argc, char *argv[]) {
 
-  std::string prefix;
+  std::string trace_filename;
   Mode mode;
   int object_num = OBJECT_NUM;
   int thread_num = THREAD_NUM;
   ObjectMover::Tier tier;
 
   int opt;
-  while ((opt = ::getopt(argc, argv, "x:o:t:m:r:h")) != -1) {
+  while ((opt = ::getopt(argc, argv, "f:o:t:m:r:h")) != -1) {
     switch (opt) {
 
-    case 'x':
+    case 'f':
       /* prefix */
-      prefix = optarg;
+      trace_filename = optarg;
       break;
 
     case 'm':
@@ -280,15 +280,15 @@ int main(int argc, char *argv[]) {
   switch(mode) {
 
   case READ:
-    read(thread_num, object_num);
+    read(trace_filename, thread_num, object_num);
     break;
 
   case WRITE:
-    write(tier, thread_num, object_num);
+    write(trace_filename, tier, thread_num, object_num);
     break;
 
   case MOVE:
-    move(tier, thread_num, object_num);
+    move(trace_filename, tier, thread_num, object_num);
     break;
 
   default:
