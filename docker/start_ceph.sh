@@ -17,6 +17,16 @@ CONF_ARGS="--conf $CEPH_CONF"
 if [ -n "$RUN_MON" -a $RUN_MON = 1 ]
 then
 
+if [ -z "$POOL_SIZE" ]
+then
+POOL_SIZE=2
+fi
+
+if [ -z "$PG_NUM" ]
+then
+PG_NUM=8
+fi
+
 FSID=`uuidgen`
 MON_DATA_DIR=/tmp/ceph/mon_data
 
@@ -35,10 +45,10 @@ auth service required = none
 auth client required = none
 osd journal size = 1024
 filestore xattr use omap = true
-osd pool default size = 2
+osd pool default size = $POOL_SIZE
 osd pool default min size = 1
-osd pool default pg num = 333
-osd pool default pgp num = 333
+osd pool default pg num = $PG_NUM
+osd pool default pgp num = $PG_NUM
 osd crush chooseleaf type = 1
 ms_bind_ipv6 = false
 
@@ -87,8 +97,8 @@ $CEPH_BIN_DIR/ceph osd setcrushmap -i /root/crushmap $CONF_ARGS
 
 # create pool
 
-$CEPH_BIN_DIR/ceph osd pool create storage_pool 30 $KEY_ARGS storage_pool_rule $CONF_ARGS
-$CEPH_BIN_DIR/ceph osd pool create archive_pool 30 $KEY_ARGS archive_pool_rule $CONF_ARGS
+$CEPH_BIN_DIR/ceph osd pool create storage_pool $PG_NUM $KEY_ARGS storage_pool_rule $CONF_ARGS
+$CEPH_BIN_DIR/ceph osd pool create archive_pool $PG_NUM $KEY_ARGS archive_pool_rule $CONF_ARGS
 
 fi
 
@@ -114,10 +124,28 @@ set -e
 
 if [ -z "$osd_entry" ]
 then
+
+if [ -z "$OP_THREADS" ]
+then
+OP_THREADS=2
+fi
+
+if [ -z "$BS_CACHE_SIZE" ]
+then
+BS_CACHE_SIZE_HDD=1G
+BS_CACHE_SIZE_SSD=3G
+else
+BS_CACHE_SIZE_HDD=$BS_CACHE_SIZE
+BS_CACHE_SIZE_SSD=$BS_CACHE_SIZE
+fi
+
 cat <<EOF >> $CEPH_CONF
 [osd]
 osd data = $OSD_DATA_DIR
 osd journal = $OSD_JOURNAL
+osd op threads = $OP_THREADS
+bluestore cache size hdd = $BS_CACHE_SIZE_HDD
+bluestore cache size ssd = $BS_CACHE_SIZE_SSD
 debug ms = 1
 debug osd = 25
 debug objecter = 20
