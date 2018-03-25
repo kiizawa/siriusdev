@@ -112,7 +112,7 @@ public:
     int start_msec = 1000*start.tv_sec + start.tv_usec/1000;
     if (ofs_->is_open()) {
       boost::mutex::scoped_lock l(*lock_);
-      *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",s," << start_msec;
+      *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",s," << start_msec << std::endl;
     }
   }
   ~Timer2() {
@@ -121,7 +121,7 @@ public:
     int finish_msec = 1000*finish.tv_sec + finish.tv_usec/1000;
     if (ofs_->is_open()) {
       boost::mutex::scoped_lock l(*lock_);
-      *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",f," << finish_msec;
+      *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",f," << finish_msec << std::endl;
     }
   }
 private:
