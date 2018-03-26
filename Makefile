@@ -1,4 +1,4 @@
-all: sample test benchmark analyser
+all: sample test benchmark analyser replayer
 
 sample: sample.cpp
 	g++ -g sample.cpp object_mover.cpp -lboost_system -lboost_thread -lrados -o sample.exe
@@ -11,3 +11,6 @@ benchmark: benchmark.cpp
 
 analyser:
 	g++ -g analyser.cpp -o analyser.exe
+
+replayer: replayer.cpp
+	g++ -g replayer.cpp object_mover.cpp -lboost_system -lboost_thread -lrados -o replayer.exe
