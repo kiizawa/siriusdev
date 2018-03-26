@@ -4,6 +4,7 @@ set -ex
 
 READ_PATTERN="p1"
 CLIENT_IDS="0"
+NUM_CLIENTS=1
 
 METHOD=pool
 HDD_TIER=a
@@ -57,7 +58,17 @@ do
     ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $W_LIST; echo $i >> $SYNC_FILE"
 done
 
-exit
+set +e
+while true
+do
+    if [ `cat $SYNC_FILE | wc -l` -eq $NUM_CLIENTS ]
+    then
+	break
+    fi
+    sleep 1
+done
+rm -rf $SYNC_FILE
+set -e
 
 # read (hdd)
 
@@ -88,6 +99,18 @@ do
     ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
 
+set +e
+while true
+do
+    if [ `cat $SYNC_FILE | wc -l` -eq $NUM_CLIENTS ]
+    then
+	break
+    fi
+    sleep 1
+done
+rm -rf $SYNC_FILE
+set -e
+
 # move (hdd -> ssd)
 for i in $CLIENT_IDS
 do
@@ -115,6 +138,18 @@ do
     M_LOG=$LOG_DIR/${METHOD}_ms.log.${i}
     ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m m -r $SSD_TIER -f $M_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
+
+set +e
+while true
+do
+    if [ `cat $SYNC_FILE | wc -l` -eq $NUM_CLIENTS ]
+    then
+	break
+    fi
+    sleep 1
+done
+rm -rf $SYNC_FILE
+set -e
 
 # read (ssd)
 
@@ -144,3 +179,15 @@ do
     R_LOG=$LOG_DIR/${METHOD}_rs.log.${i}
     ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
+
+set +e
+while true
+do
+    if [ `cat $SYNC_FILE | wc -l` -eq $NUM_CLIENTS ]
+    then
+	break
+    fi
+    sleep 1
+done
+rm -rf $SYNC_FILE
+set -e
