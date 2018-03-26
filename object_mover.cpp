@@ -339,7 +339,7 @@ void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl,
 }
 
 void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
-  Timer2 t(&trace_, &lock_, object_name, "m", "-");
+  Timer2 t(&trace_, &lock_, object_name, "m", TierToString(tier));
   int r = 0;
   switch(tier) {
   case FAST:
