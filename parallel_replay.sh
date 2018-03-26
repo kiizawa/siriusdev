@@ -22,10 +22,15 @@ cp ./replayer.exe /share/
 # log
 
 SHARED_LOG_DIR=/share/log
-rm -rf $SHARED_LOG_DIR; mkdir $SHARED_LOG_DIR
+if [ ! -e $SHARED_LOG_DIR ]
+then
+    mkdir $SHARED_LOG_DIR
+fi
 
-LOG_DIR=$SHARED_LOG_DIR/$READ_PATTERN
+LOG_DIR=$SHARED_LOG_DIR/$READ_PATTERN_$METHOD
 rm -rf $LOG_DIR; mkdir $LOG_DIR
+
+STATS=$LOG_DIR/stats.all
 
 SYNC_FILE=/share/done
 rm -rf $SYNC_FILE
@@ -57,7 +62,7 @@ do
 	NODE=192.168.0.14
     fi
     W_LIST=$SHARED_LIST_DIR/writer_list/writer.list.$i
-    W_LOG=$LOG_DIR/${METHOD}_wh.log.${i}
+    W_LOG=$LOG_DIR/wh.log.${i}
     ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $W_LIST; echo $i >> $SYNC_FILE"
 done
 
@@ -72,6 +77,18 @@ do
 done
 rm -rf $SYNC_FILE
 set -e
+
+ALL_W_LOG=$LOG_DIR/wh.log.all
+for i in $CLIENT_IDS
+do
+    W_LOG=$LOG_DIR/wh.log.${i}
+    cat $W_LOG >> $ALL_W_LOG
+done
+echo "$ALL_W_LOG" >> $STATS
+echo "" >> $STATS
+./analyser.exe $ALL_W_LOG >> $STATS
+echo "" >> $STATS
+echo "" >> $STATS
 
 # read (hdd)
 
@@ -100,7 +117,7 @@ do
 	NODE=192.168.0.14
     fi
     R_LIST=$SHARED_LIST_DIR/reader_${READ_PATTERN}_list/reader_${READ_PATTERN}.list.$i
-    R_LOG=$LOG_DIR/${METHOD}_rh.log.${i}
+    R_LOG=$LOG_DIR/rh.log.${i}
     ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
 
@@ -115,6 +132,18 @@ do
 done
 rm -rf $SYNC_FILE
 set -e
+
+ALL_R_LOG=$LOG_DIR/rh.log.all
+for i in $CLIENT_IDS
+do
+    R_LOG=$LOG_DIR/rh.log.${i}
+    cat $R_LOG >> $ALL_R_LOG
+done
+echo "$ALL_R_LOG" >> $STATS
+echo "" >> $STATS
+./analyser.exe $ALL_R_LOG >> $STATS
+echo "" >> $STATS
+echo "" >> $STATS
 
 # move (hdd -> ssd)
 
@@ -143,7 +172,7 @@ do
 	NODE=192.168.0.14
     fi
     R_LIST=$SHARED_LIST_DIR/reader_${READ_PATTERN}_list/reader_${READ_PATTERN}.list.$i
-    M_LOG=$LOG_DIR/${METHOD}_ms.log.${i}
+    M_LOG=$LOG_DIR/ms.log.${i}
     ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m m -r $SSD_TIER -f $M_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
 
@@ -158,6 +187,18 @@ do
 done
 rm -rf $SYNC_FILE
 set -e
+
+ALL_M_LOG=$LOG_DIR/ms.log.all
+for i in $CLIENT_IDS
+do
+    M_LOG=$LOG_DIR/ms.log.${i}
+    cat $M_LOG >> $ALL_M_LOG
+done
+echo "$ALL_M_LOG" >> $STATS
+echo "" >> $STATS
+./analyser.exe $ALL_M_LOG >> $STATS
+echo "" >> $STATS
+echo "" >> $STATS
 
 # read (ssd)
 
@@ -186,7 +227,7 @@ do
 	NODE=192.168.0.14
     fi
     R_LIST=$SHARED_LIST_DIR/reader_${READ_PATTERN}_list/reader_${READ_PATTERN}.list.$i
-    R_LOG=$LOG_DIR/${METHOD}_rs.log.${i}
+    R_LOG=$LOG_DIR/rs.log.${i}
     ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
 
@@ -201,3 +242,15 @@ do
 done
 rm -rf $SYNC_FILE
 set -e
+
+ALL_R_LOG=$LOG_DIR/rs.log.all
+for i in $CLIENT_IDS
+do
+    R_LOG=$LOG_DIR/rs.log.${i}
+    cat $R_LOG >> $ALL_R_LOG
+done
+echo "$ALL_R_LOG" >> $STATS
+echo "" >> $STATS
+./analyser.exe $ALL_R_LOG >> $STATS
+echo "" >> $STATS
+echo "" >> $STATS
