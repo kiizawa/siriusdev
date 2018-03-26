@@ -24,7 +24,7 @@ function start() {
 DOCKER_IMAGE=kiizawa/siriusdev:ssh
 CEPH_NET=192.168.0.0/16
 
-CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=512 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
+CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=256 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
 
 # clients
 
