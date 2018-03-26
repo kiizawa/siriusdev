@@ -23,22 +23,39 @@ cp ./replayer.exe /share/
 SHARED_LOG_DIR=/share/log
 rm -rf $SHARED_LOG_DIR; mkdir $SHARED_LOG_DIR
 
-for i in $CLIENT_IDS
-do
-    NODE="node-"$i"-docker"
-    LOG_DIR=$SHARED_LOG_DIR/$READ_PATTERN
-    rm -rf $LOG_DIR; mkdir $LOG_DIR
-done
+LOG_DIR=$SHARED_LOG_DIR/$READ_PATTERN
+rm -rf $LOG_DIR; mkdir $LOG_DIR
 
 # write (hdd)
 
 for i in $CLIENT_IDS
 do
-    NODE="node-"$i"-docker"
+    if [ $i = "0" ]
+    then
+	NODE=192.168.0.10
+    fi
+    if [ $i = "1" ]
+    then
+	NODE=192.168.0.11
+    fi
+    if [ $i = "2" ]
+    then
+	NODE=192.168.0.12
+    fi
+    if [ $i = "3" ]
+    then
+	NODE=192.168.0.13
+    fi
+    if [ $i = "4" ]
+    then
+	NODE=192.168.0.14
+    fi
     W_LIST=$SHARED_LIST_DIR/writer_list/writer.list.$i
     W_LOG=$LOG_DIR/${METHOD}_wh.log.${i}
     ssh -f $NODE "/share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $W_LIST"
 done
+
+exit
 
 # read (hdd)
 
