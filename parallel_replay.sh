@@ -28,8 +28,11 @@ LOG_DIR=$SHARED_LOG_DIR/$READ_PATTERN
 rm -rf $LOG_DIR; mkdir $LOG_DIR
 
 SYNC_FILE=/share/done
+rm -rf $SYNC_FILE
 
 # write (hdd)
+
+touch $SYNC_FILE
 
 for i in $CLIENT_IDS
 do
@@ -72,6 +75,8 @@ set -e
 
 # read (hdd)
 
+touch $SYNC_FILE
+
 for i in $CLIENT_IDS
 do
     if [ $i = "0" ]
@@ -112,6 +117,9 @@ rm -rf $SYNC_FILE
 set -e
 
 # move (hdd -> ssd)
+
+touch $SYNC_FILE
+
 for i in $CLIENT_IDS
 do
     if [ $i = "0" ]
@@ -152,6 +160,8 @@ rm -rf $SYNC_FILE
 set -e
 
 # read (ssd)
+
+touch $SYNC_FILE
 
 for i in $CLIENT_IDS
 do
