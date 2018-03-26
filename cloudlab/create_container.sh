@@ -3,44 +3,7 @@
 set -ex
 
 HOST=`hostname`
-NODES="node-0 node-1 node-2 node-3 node-4"
-
-DOCKER_IMAGE=kiizawa/siriusdev
-
-# Install docker image
-
-if [ $HOST = "node-0" ]
-then
-
-    need_to_install=0
-    for NODE in $NODES
-    do
-	ssh -f $NODE "docker pull $DOCKER_IMAGE"
-	need_to_install=`expr $need_to_install + 1`
-    done
-
-    while true
-    do
-	set +e
-	installed=0
-	for NODE in $NODES
-	do
-	    DONE=`ssh $NODE 'docker images' | grep $DOCKER_IMAGE`
-	    if [ -n "$DONE" ]
-	    then
-		echo "docker image installed on $NODE!"
-		installed=`expr $installed + 1`
-	    fi
-        done
-        set -e
-        if [ $installed -eq $need_to_install ]
-        then
-	    echo "docker image installed on all nodes!"
-	    break
-        fi
-        sleep 10
-    done
-fi
+DOCKER_IMAGE=kiizawa/siriusdev:ssh
 
 declare -A IP_ADDRS
 IP_ADDRS=(
@@ -49,6 +12,16 @@ IP_ADDRS=(
 ["node-2"]="192.168.0.12"
 ["node-3"]="192.168.0.13"
 ["node-4"]="192.168.0.14"
+["node-5"]="192.168.0.15"
+["node-6"]="192.168.0.16"
+["node-7"]="192.168.0.17"
+["node-8"]="192.168.0.18"
+["node-9"]="192.168.0.19"
+["node-10"]="192.168.0.20"
+["node-11"]="192.168.0.21"
+["node-12"]="192.168.0.22"
+["node-13"]="192.168.0.23"
+["node-14"]="192.168.0.24"
 )
 
 function start() {
@@ -73,13 +46,13 @@ function start() {
 HOST_NAME=$HOST"-docker"
 HOST_ADDR=${IP_ADDRS[$HOST]}
 
-CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=128 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
+CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=256 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
 
-if [ $HOST = "node-0" ]
+if [ $HOST = "node-0" -o $HOST = "node-1" -o $HOST = "node-2" -o $HOST = "node-3" -o $HOST = "node-4" ]
 then
     RUN_MON=0
     RUN_OSD=0
-elif [ $HOST = "node-1" ]
+elif [ $HOST = "node-5" ]
 then
     RUN_MON=1
     RUN_OSD=1
