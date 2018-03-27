@@ -66,7 +66,7 @@ do
     ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $W_LIST; echo $i >> $SYNC_FILE"
 done
 
-set +e
+set +ex
 while true
 do
     if [ `cat $SYNC_FILE | wc -l` -eq $NUM_CLIENTS ]
@@ -75,8 +75,8 @@ do
     fi
     sleep 1
 done
+set -ex
 rm -rf $SYNC_FILE
-set -e
 
 ALL_W_LOG=$LOG_DIR/wh.log.all
 for i in $CLIENT_IDS
@@ -121,7 +121,7 @@ do
     ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
 
-set +e
+set +ex
 while true
 do
     if [ `cat $SYNC_FILE | wc -l` -eq $NUM_CLIENTS ]
@@ -130,8 +130,8 @@ do
     fi
     sleep 1
 done
+set -ex
 rm -rf $SYNC_FILE
-set -e
 
 ALL_R_LOG=$LOG_DIR/rh.log.all
 for i in $CLIENT_IDS
@@ -176,7 +176,7 @@ do
     ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m m -r $SSD_TIER -f $M_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
 
-set +e
+set +ex
 while true
 do
     if [ `cat $SYNC_FILE | wc -l` -eq $NUM_CLIENTS ]
@@ -185,8 +185,8 @@ do
     fi
     sleep 1
 done
+set -ex
 rm -rf $SYNC_FILE
-set -e
 
 ALL_M_LOG=$LOG_DIR/ms.log.all
 for i in $CLIENT_IDS
