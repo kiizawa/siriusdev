@@ -4,9 +4,9 @@
 
 set -ex
 
-NODES="node-0 node-1 node-2 node-3 node-4 node-5 node-6 node-7 node-8 node-9 node-10 node-11 node-12 node-13 node-14"
+NODES="node-0 node-1 node-2 node-3 node-4 node-5"
 
-DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg
+DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
 
 need_to_install=0
 for NODE in $NODES

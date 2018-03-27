@@ -3,7 +3,7 @@
 set -ex
 
 HOST=`hostname`
-DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg
+DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
 
 declare -A IP_ADDRS
 IP_ADDRS=(
@@ -46,13 +46,13 @@ function start() {
 HOST_NAME=$HOST"-docker"
 HOST_ADDR=${IP_ADDRS[$HOST]}
 
-CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=512 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
+CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=128 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
 
-if [ $HOST = "node-0" -o $HOST = "node-1" -o $HOST = "node-2" -o $HOST = "node-3" -o $HOST = "node-4" ]
+if [ $HOST = "node-0" -o $HOST = "node-1"]
 then
     RUN_MON=0
     RUN_OSD=0
-elif [ $HOST = "node-5" ]
+elif [ $HOST = "node-2" ]
 then
     RUN_MON=1
     RUN_OSD=1
