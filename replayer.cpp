@@ -103,8 +103,10 @@ void read(const std::string trace_filename, int thread_num, const std::string &o
       if (ret > 0) {
 	done++;
       } else {
-	printf("error=%d\n", ret);
-	abort();
+	if (ret != 0) {
+	  printf("read failed! error=%d\n", ret);
+	  abort();
+	}
       }
     }
     if (done == thread_num) {
@@ -204,8 +206,10 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
       if (ret == 0) {
 	done++;
       }	else {
-	printf("error=%d\n", ret);
-	abort();
+	if (ret != 1) {
+	  printf("write failed! error=%d\n", ret);
+	  abort();
+	}
       }
     }
     if (done == thread_num) {
@@ -283,8 +287,10 @@ void move(const std::string &trace_filename, ObjectMover::Tier tier, int thread_
       if (ret == 0) {
 	done++;
       } else {
-	printf("error=%d\n", ret);
-	abort();
+	if (ret != 1) {
+	  printf("move failed! error=%d\n", ret);
+	  abort();
+	}
       }
     }
     if (done == thread_num) {
