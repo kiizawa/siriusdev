@@ -6,13 +6,14 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <list>
 
 unsigned long min_timestamp = -1UL;
 unsigned long max_timestamp = 0;
 unsigned long total = 0;
 int count = 0;
 
-std::map<std::string, unsigned long> latencies;
+std::map<std::string, std::list<unsigned long> > latencies;
 
 std::vector<std::string> split(std::string input, char delimiter) {
   std::istringstream stream(input);
@@ -56,17 +57,29 @@ int main(int argc, char *argv[]) {
     }
 
     if (sf == "s") {
-      latencies[oid] = timestamp;
+      std::map<std::string, std::list<unsigned long> >::iterator it = latencies.find(oid);
+      if (it == latencies.end()) {
+	std::list<unsigned long> values;
+	values.push_back(timestamp);
+	latencies[oid] = values;
+      } else {
+	std::list<unsigned long> &values = latencies[oid];
+	values.push_back(timestamp);
+      }
     } else {
-      std::map<std::string, unsigned long>::iterator it = latencies.find(oid);
+      std::map<std::string, std::list<unsigned long> >::iterator it = latencies.find(oid);
       if (it == latencies.end()) {
 	std::cout << "BUG! "<< line << std::endl;
 	abort();
       }
-      unsigned long latency = timestamp - it->second;
+      std::list<unsigned long> &values = it->second;
+      unsigned long latency = timestamp - values.front();
       total += latency;
       count++;
-      latencies.erase(oid);      
+      values.pop_front();
+      if (values.empty()) {
+	latencies.erase(oid);
+      }
     }
   }
 
