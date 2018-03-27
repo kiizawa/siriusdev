@@ -222,7 +222,7 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
       break;
     }
     printf("done=%d\n", done);
-    usleep(3000*1000);
+    usleep(WAIT_MSEC*1000);
   }
 
 }
