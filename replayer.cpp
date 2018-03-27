@@ -99,12 +99,16 @@ void read(const std::string trace_filename, int thread_num, const std::string &o
       int ret = rets[j];
       if (ret > 0) {
 	done++;
+      } else {
+	printf("error=%d\n", ret);
+	abort();
       }
     }
     if (done == thread_num) {
       printf("all reads (slow) done!\n");
       break;
     }
+    usleep(WAIT_MSEC*1000);
   }
 
   std::vector<librados::bufferlist*>::iterator it;
@@ -193,12 +197,16 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
       int ret = rets[j];
       if (ret == 0) {
 	done++;
+      }	else {
+	printf("error=%d\n", ret);
+	abort();
       }
     }
     if (done == thread_num) {
       printf("all creates done!\n");
       break;
     }
+    usleep(WAIT_MSEC*1000);
   }
 
 }
@@ -256,18 +264,25 @@ void move(const std::string &trace_filename, ObjectMover::Tier tier, int thread_
       goto retry;
     }
   }
+
+  /* wait */
+
   while (true) {
     int done = 0;
     for (int j = 0; j < thread_num; j++) {
       int ret = rets[j];
       if (ret == 0) {
 	done++;
+      } else {
+	printf("error=%d\n", ret);
+	abort();
       }
     }
     if (done == thread_num) {
       printf("all moves done!\n");
       break;
     }
+    usleep(WAIT_MSEC*1000);
   }
 }
 
