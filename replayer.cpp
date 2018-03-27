@@ -215,7 +215,6 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
 	  printf("write failed! error=%d\n", ret);
 	  abort();
 	}
-	printf("waiting for object=%s\n", waiting[j].c_str());
       }
     }
     if (done == thread_num) {
