@@ -46,7 +46,7 @@ function start() {
 HOST_NAME=$HOST"-docker"
 HOST_ADDR=${IP_ADDRS[$HOST]}
 
-CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=256 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
+CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=512 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
 
 if [ $HOST = "node-0" -o $HOST = "node-1" -o $HOST = "node-2" -o $HOST = "node-3" -o $HOST = "node-4" ]
 then
