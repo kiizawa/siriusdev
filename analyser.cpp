@@ -59,7 +59,10 @@ int main(int argc, char *argv[]) {
       latencies[oid] = timestamp;
     } else {
       std::map<std::string, unsigned long>::iterator it = latencies.find(oid);
-      assert(it != latencies.end());
+      if (it == latencies.end()) {
+	std::cout << "BUG! "<< line << std::endl;
+	abort();
+      }
       unsigned long latency = timestamp - it->second;
       total += latency;
       count++;
