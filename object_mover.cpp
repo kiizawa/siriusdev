@@ -289,6 +289,7 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 	}
       }
       {
+	Timer2 t(&trace_, &lock_, object_name+"_2", "w", TierToString(tier));
 	// 2. create a dummy object in Storage Pool
 
 	librados::ObjectWriteOperation op;
