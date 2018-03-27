@@ -83,6 +83,7 @@ void read(const std::string trace_filename, int thread_num, int object_num) {
       printf("all reads (slow) done!\n");
       break;
     }
+    usleep(WAIT_MSEC*1000);
   }
 
   std::vector<librados::bufferlist*>::iterator it;
@@ -154,6 +155,7 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
       printf("all creates done!\n");
       break;
     }
+    usleep(WAIT_MSEC*1000);
   }
 
 }
@@ -211,6 +213,7 @@ void move(const std::string &trace_filename, ObjectMover::Tier tier, int thread_
       printf("all moves done!\n");
       break;
     }
+    usleep(WAIT_MSEC*1000);
   }
 }
 
