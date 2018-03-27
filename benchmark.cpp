@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 
+#include <map>
+
 #include <rados/librados.hpp>
 
 #include "object_mover.hpp"
@@ -109,6 +111,8 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
     rets.push_back(0);
   }
 
+  std::map<int, std::string> waiting;
+
   /* write */
 
   librados::bufferlist bl;
@@ -126,6 +130,7 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
       int ret = rets[j];
       if (ret == 0) {
 	rets[j] = 1;
+	waiting[j] = object;
 	om.CreateAsync(tier, object, bl, &rets[j]);
 	// while (rets[j] == 1);
 	// assert(rets[j] == 0);
@@ -155,7 +160,11 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
       printf("all creates done!\n");
       break;
     }
-    usleep(WAIT_MSEC*1000);
+    std::map<int, std::string>::iterator it;
+    for (it = waiting.begin(); it != waiting.end(); ++it) {
+      printf("waiting %s\n", it->second.c_str());
+    }
+    usleep(3000*1000);
   }
 
 }
