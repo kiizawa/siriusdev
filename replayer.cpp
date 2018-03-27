@@ -222,6 +222,7 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
       printf("all creates done!\n");
       break;
     }
+    printf("done=%d\n", done);
     usleep(3000*1000);
   }
 
