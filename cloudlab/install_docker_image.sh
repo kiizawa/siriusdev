@@ -4,7 +4,7 @@
 
 set -ex
 
-NODES="node-0 node-1 node-2 node-3 node-4 node-5 node-6 node-7 node-8 node-9 node-10 node-11 node-12 node-13 node-14 node-15"
+NODES="node-0 node-1 node-2 node-3 node-4 node-5 node-6 node-7 node-8 node-9 node-10 node-11 node-12 node-13 node-14"
 
 DOCKER_IMAGE=kiizawa/siriusdev:ssh
 
@@ -15,25 +15,25 @@ do
     need_to_install=`expr $need_to_install + 1`
 done
 
-set +e
 while true
 do
     installed=0
+    set +e
     for NODE in $NODES
     do
-	DONE=`ssh $NODE 'docker images' | grep $DOCKER_IMAGE`
+	DONE=`ssh $NODE 'docker images $DOCKER_IMAGE' | grep -v TAG`
 	if [ -n "$DONE" ]
 	then
 	    echo "docker image installed on $NODE!"
 	    installed=`expr $installed + 1`
 	fi
-done
-set -e
+    done
+    set -e
 
-if [ $installed -eq $need_to_install ]
-then
-    echo "docker image installed on all nodes!"
-    break
-fi
-sleep 10
+    if [ $installed -eq $need_to_install ]
+    then
+        echo "docker image installed on all nodes!"
+        break
+    fi
+    sleep 10
 done
