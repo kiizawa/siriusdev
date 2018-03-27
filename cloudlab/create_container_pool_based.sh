@@ -21,7 +21,7 @@ function start() {
 	$DOCKER_IMAGE
 }
 
-DOCKER_IMAGE=kiizawa/siriusdev:ssh
+DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg
 CEPH_NET=192.168.0.0/16
 
 CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=512 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"

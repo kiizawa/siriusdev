@@ -3,7 +3,7 @@
 set -ex
 
 HOST=`hostname`
-DOCKER_IMAGE=kiizawa/siriusdev:ssh
+DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg
 
 declare -A IP_ADDRS
 IP_ADDRS=(
