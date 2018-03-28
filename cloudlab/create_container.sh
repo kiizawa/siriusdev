@@ -4,7 +4,7 @@ set -ex
 
 DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
 CLIENTS="node-0 node-1"
-SERVERS="node-5 node-6 node-7 node-8"
+SERVERS="node-2 node-3 node-4 node-5"
 
 declare -A IP_ADDRS
 IP_ADDRS=(
@@ -86,7 +86,7 @@ FIRST_SERVER=`echo $SERVERS | cut -d ' ' -f 1`
 
 if [ -n "$R" ]
 then
-    if [ $HOST = $FIRST_OSD_HOST ]
+    if [ $HOST = $FIRST_SERVER ]
     then
 	RUN_MON=1
 	RUN_OSD=1
