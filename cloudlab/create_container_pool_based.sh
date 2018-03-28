@@ -3,8 +3,8 @@
 set -ex
 
 DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
-CLIENTS="node-0 node-1"
-SERVERS="node-2 node-3 node-4 node-5"
+CLIENTS="node-0 node-1 node-2"
+SERVERS="node-3 node-4 node-5 node-6 node-7 node-8"
 
 get_client_ip_addr () {
     HOST=$1
@@ -119,7 +119,8 @@ then
     sleep 5
 
     HOST_NAME=$HOST"-docker-hdd"
-    HOST_ADDR=` expr $HOST_ADDR + 1 `
+    O=`echo $HOST_ADDR | cut -d . -f 4`
+    HOST_ADDR=192.168.0.` expr $O + 1 `
     RUN_MON=0
     RUN_OSD=1
     POOL="archive_pool"
