@@ -3,6 +3,8 @@
 set -ex
 
 DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
+CLIENTS="node-0 node-1"
+SERVERS="node-5 node-6 node-7 node-8"
 
 declare -A CLIENT_IP_ADDRS
 CLIENT_IP_ADDRS=(
@@ -82,7 +84,7 @@ set -e
 if [ -n "$R" ]
 then
     HOST_NAME=$HOST"-docker"
-    HOST_ADDR=${IP_CLIENT_ADDRS[$HOST]}
+    HOST_ADDR=${CLIENT_IP_ADDRS[$HOST]}
     RUN_MON=0
     RUN_OSD=0
     start
