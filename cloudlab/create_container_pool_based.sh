@@ -4,40 +4,41 @@ set -ex
 
 DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
 CLIENTS="node-0 node-1"
-SERVERS="node-5 node-6 node-7 node-8"
+SERVERS="node-2 node-3 node-4 node-5"
 
-declare -A CLIENT_IP_ADDRS
-CLIENT_IP_ADDRS=(
-["node-0"]="192.168.0.10"
-["node-1"]="192.168.0.11"
-["node-2"]="192.168.0.12"
-["node-3"]="192.168.0.13"
-["node-4"]="192.168.0.14"
-)
+get_client_ip_addr () {
+    HOST=$1
+    OFFSET=10
+    for i in $CLIENTS
+    do
+	if [ $i = $HOST ]
+	then
+	    break
+	else
+	    OFFSET=` expr $OFFSET + 1 `
+	fi
+    done
+    echo "192.168.0.$OFFSET"
+}
 
-declare -A SERVER_IP_ADDRS
-SERVER_IP_ADDRS=(
-["node-5-docker-ssd"]="192.168.0.15"
-["node-5-docker-hdd"]="192.168.0.16"
-["node-6-docker-ssd"]="192.168.0.17"
-["node-6-docker-hdd"]="192.168.0.18"
-["node-7-docker-ssd"]="192.168.0.19"
-["node-7-docker-hdd"]="192.168.0.20"
-["node-8-docker-ssd"]="192.168.0.21"
-["node-8-docker-hdd"]="192.168.0.22"
-["node-9-docker-ssd"]="192.168.0.23"
-["node-9-docker-hdd"]="192.168.0.24"
-["node-10-docker-ssd"]="192.168.0.25"
-["node-10-docker-hdd"]="192.168.0.26"
-["node-11-docker-ssd"]="192.168.0.27"
-["node-11-docker-hdd"]="192.168.0.28"
-["node-12-docker-ssd"]="192.168.0.29"
-["node-12-docker-hdd"]="192.168.0.30"
-["node-13-docker-ssd"]="192.168.0.31"
-["node-13-docker-hdd"]="192.168.0.32"
-["node-14-docker-ssd"]="192.168.0.33"
-["node-14-docker-hdd"]="192.168.0.34"
-)
+get_server_ip_addr () {
+    HOST=$1
+    OFFSET=10
+    for i in $CLIENTS
+    do
+	OFFSET=` expr $OFFSET + 1 `
+    done
+    for i in $SERVERS
+    do
+	if [ $i = $HOST ]
+	then
+	    break
+	else
+	    OFFSET=` expr $OFFSET + 2 `
+	fi
+    done
+    echo "192.168.0.$OFFSET"
+}
 
 function start() {
     rm -rf /dev/shm/$HOST_NAME; mkdir /dev/shm/$HOST_NAME
@@ -84,7 +85,7 @@ set -e
 if [ -n "$R" ]
 then
     HOST_NAME=$HOST"-docker"
-    HOST_ADDR=${CLIENT_IP_ADDRS[$HOST]}
+    HOST_ADDR=`get_client_ip_addr $HOST`
     RUN_MON=0
     RUN_OSD=0
     start
@@ -101,7 +102,7 @@ FIRST_SERVER=`echo $SERVERS | cut -d ' ' -f 1`
 if [ -n "$R" ]
 then
     HOST_NAME=$HOST"-docker-ssd"
-    HOST_ADDR=${SERVER_IP_ADDRS[$HOST_NAME]}
+    HOST_ADDR=`get_server_ip_addr $HOST`
     if [ $HOST = $FIRST_SERVER ]
     then
 	RUN_MON=1
@@ -118,7 +119,7 @@ then
     sleep 5
 
     HOST_NAME=$HOST"-docker-hdd"
-    HOST_ADDR=${SERVER_IP_ADDRS[$HOST_NAME]}
+    HOST_ADDR=` expr $HOST_ADDR + 1 `
     RUN_MON=0
     RUN_OSD=1
     POOL="archive_pool"
