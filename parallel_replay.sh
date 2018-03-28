@@ -4,7 +4,7 @@ set -ex
 
 READ_PATTERN="p1"
 CLIENT_IDS="0 1 2 3 4"
-NUM_CLIENTS=5
+NUM_CLIENTS=`echo $CLIENT_IDS | wc -w`
 
 METHOD=pool
 HDD_TIER=a
