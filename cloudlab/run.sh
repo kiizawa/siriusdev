@@ -40,7 +40,7 @@ for SLAVE_NODE in $SLAVE_NODES
 do
     ssh $SLAVE_NODE "sudo apt-get install -y nfs-common"
     ssh $SLAVE_NODE "if [ ! -e /tmp/share ]; then mkdir /tmp/share; fi"
-    ssh $SLAVE_NODE "sudo mount -t nfs node-0:/tmp/share /tmp/share"
+    ssh $SLAVE_NODE "sudo mount -t nfs $MASTER_NODE:/tmp/share /tmp/share"
     ssh $SLAVE_NODE "sudo chmod a+w /tmp/share"
 done
 
