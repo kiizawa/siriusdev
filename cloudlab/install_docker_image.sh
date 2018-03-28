@@ -4,12 +4,10 @@
 
 set -ex
 
-NODES="node-0 node-1 node-2 node-3 node-4 node-5"
-
 DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
 
 need_to_install=0
-for NODE in $NODES
+for NODE in $ALL_NODES
 do
     ssh -f $NODE "docker pull $DOCKER_IMAGE"
     need_to_install=`expr $need_to_install + 1`
@@ -19,7 +17,7 @@ while true
 do
     installed=0
     set +e
-    for NODE in $NODES
+    for NODE in $ALL_NODES
     do
 	DONE=`ssh $NODE 'docker images $DOCKER_IMAGE' | grep -v TAG`
 	if [ -n "$DONE" ]

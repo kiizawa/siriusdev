@@ -4,9 +4,9 @@ set -ex
 
 # Generall Settings
 
-MASTER_NODE="node-0"
-SLAVE_NODES="node-1 node-2 node-3 node-4 node-5 node-6 node-7 node-8 node-9 node-10 node-11 node-12 node-13 node-14 node-15"
-ALL_NODES=$MASTER_NODE" "$SLAVE_NODES
+export MASTER_NODE="node-0"
+export SLAVE_NODES="node-1 node-2 node-3 node-4 node-5 node-6 node-7 node-8 node-9 node-10 node-11 node-12 node-13 node-14 node-15"
+export ALL_NODES=$MASTER_NODE" "$SLAVE_NODES
 
 sudo apt-get update
 sudo apt install -y dstat
@@ -56,10 +56,10 @@ done
 
 ./install_docker_image.sh
 
-for NODE in $ALL_NODES
-do
-    #scp create_container.sh $NODE:/tmp
-    #ssh $NODE sh -c "/tmp/create_container.sh"
-    scp create_container_pool_based.sh $NODE:/tmp
-    ssh $NODE sh -c "/tmp/create_container_pool_based.sh"
-done
+#for NODE in $ALL_NODES
+#do
+#    #scp create_container.sh $NODE:/tmp
+#    #ssh $NODE sh -c "/tmp/create_container.sh"
+#    scp create_container_pool_based.sh $NODE:/tmp
+#    ssh $NODE sh -c "/tmp/create_container_pool_based.sh"
+#done

@@ -2,8 +2,6 @@
 
 set -ex
 
-MASTER_NODE="node-0"
-
 if [ `hostname` = $MASTER_NODE ]
 then
     cd /tmp
