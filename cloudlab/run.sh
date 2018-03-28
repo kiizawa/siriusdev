@@ -5,7 +5,7 @@ set -ex
 # Generall Settings
 
 MASTER_NODE="node-0"
-SLAVE_NODES="node-1 node-2 node-3 node-4 node-5"
+SLAVE_NODES="node-1 node-2 node-3 node-4 node-5 node-6 node-7 node-8 node-9 node-10 node-11 node-12 node-13 node-14 node-15"
 ALL_NODES=$MASTER_NODE" "$SLAVE_NODES
 
 sudo apt-get update
