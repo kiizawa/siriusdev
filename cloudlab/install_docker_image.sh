@@ -4,7 +4,7 @@
 
 set -ex
 
-DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
+DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log_method
 
 need_to_install=0
 for NODE in $ALL_NODES
