@@ -3,8 +3,6 @@
 set -ex
 
 DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
-CLIENTS="node-0 node-1"
-SERVERS="node-5 node-6 node-7 node-8"
 
 declare -A CLIENT_IP_ADDRS
 CLIENT_IP_ADDRS=(
