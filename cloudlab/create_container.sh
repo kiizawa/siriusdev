@@ -2,8 +2,9 @@
 
 set -ex
 
-HOST=`hostname`
 DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
+CLIENTS="node-0 node-1"
+SERVERS="node-5 node-6 node-7 node-8"
 
 declare -A IP_ADDRS
 IP_ADDRS=(
@@ -43,27 +44,58 @@ function start() {
 	$DOCKER_IMAGE
 }
 
+CEPH_NET=192.168.0.0/16
+HOST=`hostname`
 HOST_NAME=$HOST"-docker"
 HOST_ADDR=${IP_ADDRS[$HOST]}
 
-CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=128 -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
+OSD_NUM_PER_POOL=`echo $SERVERS | wc -w`
+if [ $OSD_NUM_PER_POOL -lt 5 ]
+then
+    PG_NUM=128
+elif [ $OSD_NUM_PER_POOL -lt 10 ]
+then
+    PG_NUM=512
+elif [ $OSD_NUM_PER_POOL -lt 50 ]
+then
+    PG_NUM=1024
+fi
 
-if [ $HOST = "node-0" -o $HOST = "node-1"]
+CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=$PG_NUM -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
+
+# clients
+
+set +e
+R=`echo $CLIENTS | grep $HOST`
+set -e
+
+if [ -n "$R" ]
 then
     RUN_MON=0
     RUN_OSD=0
-elif [ $HOST = "node-2" ]
-then
-    RUN_MON=1
-    RUN_OSD=1
-else
-    RUN_MON=0
-    RUN_OSD=1
+    start
 fi
 
-OSD_TYPE="bluestore"
-DEVICE_ARGS="-e BS_FAST_BD=/dev/sdc -e BS_SLOW_BD=/dev/sdb"
-POOL="storage_pool"
-CEPH_NET=192.168.0.0/16
+#servers
 
-start
+set +e
+R=`echo $SERVERS | grep $HOST`
+set -e
+
+FIRST_SERVER=`echo $SERVERS | cut -d ' ' -f 1`
+
+if [ -n "$R" ]
+then
+    if [ $HOST = $FIRST_OSD_HOST ]
+    then
+	RUN_MON=1
+	RUN_OSD=1
+    else
+	RUN_MON=0
+	RUN_OSD=1
+    fi
+    OSD_TYPE="bluestore"
+    DEVICE_ARGS="-e BS_FAST_BD=/dev/sdc -e BS_SLOW_BD=/dev/sdb"
+    POOL="storage_pool"
+    start
+fi
