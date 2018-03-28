@@ -13,7 +13,8 @@
 
 #define OBJECT_NUM 10000
 #define THREAD_NUM 128
-#define WAIT_MSEC 10
+#define SEND_MSEC 10
+#define WAIT_MSEC 3000
 
 enum Mode {
   READ,
@@ -32,6 +33,8 @@ std::vector<std::string> split(std::string input, char delimiter) {
 }
 
 void read(const std::string trace_filename, int thread_num, const std::string &object_list) {
+
+  std::map<int, std::string> waiting;
 
   /* Initialize a Object Mover */
 
@@ -77,6 +80,7 @@ void read(const std::string trace_filename, int thread_num, const std::string &o
       int ret = rets[j];
       if (ret > 0) {
 	rets[j] = 0;
+	waiting[j] = object;
 	bls[j]->clear();
 	om.ReadAsync(object, bls[j], &rets[j]);
 	// while (rets[j] == 1);
@@ -91,7 +95,7 @@ void read(const std::string trace_filename, int thread_num, const std::string &o
       }
     }
     if (used == thread_num) {
-      usleep(WAIT_MSEC*1000);
+      usleep(SEND_MSEC*1000);
       goto retry;
     }
   }
@@ -109,6 +113,7 @@ void read(const std::string trace_filename, int thread_num, const std::string &o
 	  printf("read failed! error=%d\n", ret);
 	  abort();
 	}
+	printf("waiting %s\n", waiting[j].c_str());
       }
     }
     if (done == thread_num) {
@@ -194,11 +199,10 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
 	  printf("write failed! error=%d\n", ret);
 	  abort();
 	}
-	printf("waiting %s=\n", waiting[j].c_str());
       }
     }
     if (used == thread_num) {
-      usleep(3000*1000);
+      usleep(SEND_MSEC*1000);
       goto retry;
     }
   }
@@ -216,6 +220,7 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
 	  printf("write failed! error=%d\n", ret);
 	  abort();
 	}
+	printf("waiting %s\n", waiting[j].c_str());
       }
     }
     if (done == thread_num) {
@@ -229,6 +234,8 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
 }
 
 void move(const std::string &trace_filename, ObjectMover::Tier tier, int thread_num, const std::string &object_list) {
+
+  std::map<int, std::string> waiting;
 
   /* Initialize a Object Mover */
 
@@ -267,6 +274,7 @@ void move(const std::string &trace_filename, ObjectMover::Tier tier, int thread_
       int ret = rets[j];
       if (ret == 0) {
 	rets[j] = 1;
+	waiting[j] = object;
 	om.MoveAsync(tier, object, &rets[j]);
 	// while (rets[j] == 1);
 	// assert(rets[j] == 0);
@@ -280,7 +288,7 @@ void move(const std::string &trace_filename, ObjectMover::Tier tier, int thread_
       }
     }
     if (used == thread_num) {
-      usleep(WAIT_MSEC*1000);
+      usleep(SEND_MSEC*1000);
       goto retry;
     }
   }
@@ -298,6 +306,7 @@ void move(const std::string &trace_filename, ObjectMover::Tier tier, int thread_
 	  printf("move failed! error=%d\n", ret);
 	  abort();
 	}
+	printf("waiting %s\n", waiting[j].c_str());
       }
     }
     if (done == thread_num) {
