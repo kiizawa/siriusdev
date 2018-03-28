@@ -194,10 +194,11 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
 	  printf("write failed! error=%d\n", ret);
 	  abort();
 	}
+	printf("waiting %s=\n", waiting[j].c_str());
       }
     }
     if (used == thread_num) {
-      usleep(WAIT_MSEC*1000);
+      usleep(3000*1000);
       goto retry;
     }
   }
