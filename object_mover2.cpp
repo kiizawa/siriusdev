@@ -202,7 +202,7 @@ ObjectMover::ObjectMover(int thread_pool_size, const std::string &trace_filename
 
   for (int i = 0; i < thread_pool_size; ++i) {
     boost::thread* t = thr_grp_.create_thread(boost::bind(&boost::asio::io_service::run, &ios_));
-    sessions_.insert(std::make_pair(t->get_id(), new Session(cluster_)));
+    sessions_.insert(std::make_pair(t->get_id(), new Session(&cluster_)));
   }
   if (!trace_filename.empty()) {
     trace_.open(trace_filename);
@@ -256,7 +256,7 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
       op.write_full(bl);
       op.setxattr("tier", v);
       Session *s = sessions_[boost::this_thread::get_id()];
-      librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+      librados::AioCompletion *completion = cluster_.aio_create_completion();
       r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
       assert(r == 0);
       completion->wait_for_safe();
@@ -279,7 +279,7 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 	v.append("archive");
 	op.setxattr("tier", v);
 	Session *s = sessions_[boost::this_thread::get_id()];
-	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	librados::AioCompletion *completion = cluster_.aio_create_completion();
 	r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
 	assert(r == 0);
 	completion->wait_for_safe();
@@ -297,7 +297,7 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 	librados::bufferlist bl_dummy;
 	op.write_full(bl_dummy);
 	Session *s = sessions_[boost::this_thread::get_id()];
-	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	librados::AioCompletion *completion = cluster_.aio_create_completion();
 	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op);
 	assert(r == 0);
 	completion->wait_for_safe();
@@ -314,7 +314,7 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 	librados::ObjectWriteOperation op;
 	Session *s = sessions_[boost::this_thread::get_id()];
 	op.set_redirect(object_name, s->io_ctx_archive_, 0);
-	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	librados::AioCompletion *completion = cluster_.aio_create_completion();
 	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
 	assert(r == 0);
 	completion->wait_for_safe();
@@ -359,7 +359,7 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
 	librados::ObjectWriteOperation op;
 	op.remove();
 	Session *s = sessions_[boost::this_thread::get_id()];
-	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	librados::AioCompletion *completion = cluster_.aio_create_completion();
 	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
 	assert(r == 0);
 	completion->wait_for_safe();
@@ -385,7 +385,7 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
 	  op2.set_alloc_hint2(0, 0, 0);
 	}
 	op2.setxattr("tier", v2);
-	completion = s->cluster_.aio_create_completion();
+	completion = cluster_.aio_create_completion();
 	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op2, 0);
 	assert(r == 0);
 	completion->wait_for_safe();
@@ -399,7 +399,7 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
 	// remove the object in Archive Pool
 	librados::ObjectWriteOperation op3;
 	op3.remove();
-	completion = s->cluster_.aio_create_completion();
+	completion = cluster_.aio_create_completion();
 	r = s->io_ctx_archive_.aio_operate(object_name, completion, &op3);
 	assert(r == 0);
 	completion->wait_for_safe();
@@ -421,7 +421,7 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
 	  op.set_alloc_hint2(0, 0, 0);
 	}
 	Session *s = sessions_[boost::this_thread::get_id()];
-	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	librados::AioCompletion *completion = cluster_.aio_create_completion();
 	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
 	assert(r == 0);
 	completion->wait_for_safe();
@@ -453,7 +453,7 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
 	librados::ObjectWriteOperation op;
 	Session *s = sessions_[boost::this_thread::get_id()];
 	op.copy_from(object_name, s->io_ctx_storage_, 0);
-	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	librados::AioCompletion *completion = cluster_.aio_create_completion();
 	r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
 	assert(r == 0);
 	completion->wait_for_safe();
@@ -475,7 +475,7 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
 	librados::bufferlist bl;
 	bl.append("archive");
 	op.setxattr("tier", bl);
-	completion = s->cluster_.aio_create_completion();
+	completion = cluster_.aio_create_completion();
 	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
 	assert(r == 0);
 	completion->wait_for_safe();
@@ -503,7 +503,7 @@ int ObjectMover::GetLocation(const std::string &object_name) {
   int err;
   op.getxattr("tier", &bl, &err);
   Session *s = sessions_[boost::this_thread::get_id()];
-  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+  librados::AioCompletion *completion = cluster_.aio_create_completion();
   r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0, NULL);
   assert(r == 0);
   completion->wait_for_safe();
@@ -535,7 +535,7 @@ void ObjectMover::Lock(const std::string &object_name) {
   v2.append("1");
   op.setxattr("lock", v2);
   Session *s = sessions_[boost::this_thread::get_id()];
-  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+  librados::AioCompletion *completion = cluster_.aio_create_completion();
   r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
   assert(r == 0);
   completion->wait_for_safe();
@@ -557,7 +557,7 @@ void ObjectMover::Unlock(const std::string &object_name) {
   v2.append("0");
   op.setxattr("lock", v2);
   Session *s = sessions_[boost::this_thread::get_id()];
-  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+  librados::AioCompletion *completion = cluster_.aio_create_completion();
   r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
   assert(r == 0);
   completion->wait_for_safe();
@@ -573,7 +573,7 @@ void ObjectMover::Delete(const std::string &object_name, int *err) {
   librados::ObjectWriteOperation op;
   op.remove();
   Session *s = sessions_[boost::this_thread::get_id()];
-  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+  librados::AioCompletion *completion = cluster_.aio_create_completion();
   r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
   assert(r == 0);
   completion->wait_for_safe();
@@ -588,7 +588,7 @@ void ObjectMover::Delete(const std::string &object_name, int *err) {
   // If the object exists in Archive Pool, remove it too.
   op.assert_exists();
   op.remove();
-  completion = s->cluster_.aio_create_completion();
+  completion = cluster_.aio_create_completion();
   r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
   assert(r == 0);
   completion->wait_for_safe();
