@@ -2,9 +2,9 @@
 
 set -ex
 
-DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log_method
-CLIENTS="node-0 node-1 node-2"
-SERVERS="node-3 node-4 node-5 node-6 node-7 node-8"
+DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
+CLIENTS="node-0 node-1 node-2 node-3 node-4"
+SERVERS="node-5 node-6 node-7 node-8 node-9 node-10 node-11 node-12 node-13 node-14"
 
 declare -A IP_ADDRS
 IP_ADDRS=(
@@ -76,6 +76,7 @@ then
     RUN_MON=0
     RUN_OSD=0
     start
+    exit
 fi
 
 #servers

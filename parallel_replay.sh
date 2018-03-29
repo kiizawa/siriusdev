@@ -4,7 +4,9 @@ set -ex
 
 READ_PATTERN="p1"
 CLIENT_IDS="0 1 2 3 4"
+THREAD_NUM=64
 NUM_CLIENTS=`echo $CLIENT_IDS | wc -w`
+NUM_NODES=10
 
 METHOD=pool
 HDD_TIER=a
@@ -15,7 +17,6 @@ SSD_TIER=s
 #SSD_TIER=f
 
 SHARED_LIST_DIR=/share/XGC_data
-THREAD_NUM=128
 
 cp ./replayer.exe /share/
 
@@ -27,7 +28,7 @@ then
     mkdir $SHARED_LOG_DIR
 fi
 
-LOG_DIR=$SHARED_LOG_DIR/${METHOD}_${READ_PATTERN}
+LOG_DIR=$SHARED_LOG_DIR/${NUM_NODES}_${METHOD}_${READ_PATTERN}
 rm -rf $LOG_DIR; mkdir $LOG_DIR
 
 STATS=$LOG_DIR/stats.all
