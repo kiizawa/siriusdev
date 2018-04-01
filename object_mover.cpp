@@ -109,7 +109,7 @@ public:
     : ofs_(ofs), lock_(lock), oid_(oid), mode_(mode), tier_(tier) {
     struct timeval start;
     ::gettimeofday(&start, NULL);
-    int start_msec = 1000*start.tv_sec + start.tv_usec/1000;
+    unsigned long start_msec = 1000*start.tv_sec + start.tv_usec/1000;
     if (ofs_->is_open()) {
       boost::mutex::scoped_lock l(*lock_);
       *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",s," << start_msec << std::endl;
@@ -118,7 +118,7 @@ public:
   ~Timer2() {
     struct timeval finish;
     ::gettimeofday(&finish, NULL);
-    int finish_msec = 1000*finish.tv_sec + finish.tv_usec/1000;
+    unsigned long finish_msec = 1000*finish.tv_sec + finish.tv_usec/1000;
     if (ofs_->is_open()) {
       boost::mutex::scoped_lock l(*lock_);
       *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",f," << finish_msec << std::endl;
