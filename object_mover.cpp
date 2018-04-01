@@ -210,18 +210,27 @@ ObjectMover::ObjectMover(int thread_pool_size, const std::string &trace_filename
   w_ = new boost::asio::io_service::work(ios_);
   for (int i = 0; i < thread_pool_size; ++i) {
     boost::thread* t = thr_grp_.create_thread(boost::bind(&boost::asio::io_service::run, &ios_));
+#ifndef USE_SESSION_POOL
     sessions_.insert(std::make_pair(t->get_id(), new Session));
+#endif /* !USE_SESSION_POOL */
   }
+#ifdef USE_SESSION_POOL
+  session_pool_ = new SessionPool(32);
+#endif /* USE_SESSION_POOL */
   if (!trace_filename.empty()) {
     trace_.open(trace_filename);
   }
 }
 
 ObjectMover::~ObjectMover() {
+#ifdef USE_SESSION_POOL
+  delete session_pool_;
+#else
   std::map<boost::thread::id, Session*>::iterator it;
   for (it = sessions_.begin(); it != sessions_.end(); it++) {
     delete it->second;
   }
+#endif /* !USE_SESSION_POOL */
   delete w_;
   thr_grp_.join_all();
 #ifdef SHOW_STATS
@@ -243,7 +252,6 @@ ObjectMover::~ObjectMover() {
 }
 
 void ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err) {
-  Timer2 t(&trace_, &lock_, object_name, "w", TierToString(tier));
   int r = 0;
   switch(tier) {
   case FAST:
@@ -261,10 +269,17 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
       }
       op.write_full(bl);
       op.setxattr("tier", v);
+#ifdef USE_SESSION_POOL
+      Session *s = session_pool_->GetSession();
+#else
       Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
       librados::AioCompletion *completion = s->cluster_.aio_create_completion();
       r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
       assert(r == 0);
+#ifdef USE_SESSION_POOL
+      session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
       completion->wait_for_safe();
       r = completion->get_return_value();
       completion->release();
@@ -284,10 +299,18 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 	librados::bufferlist v;
 	v.append("archive");
 	op.setxattr("tier", v);
+#ifdef USE_SESSION_POOL
+	Session *s = session_pool_->GetSession();
+#else
 	Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
 	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
 	r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
 	assert(r == 0);
+#ifdef USE_SESSION_POOL
+	session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
+	Timer2 t(&trace_, &lock_, object_name, "w", TierToString(tier));
 #if 1
 	completion->wait_for_safe();
 #else
@@ -308,6 +331,8 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 	  printf("write_full/setxattr failed r=%d\n", r);
 	  break;
 	}
+	*err = r;
+	return;
       }
       {
 	// 2. create a dummy object in Storage Pool
@@ -315,10 +340,17 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 	librados::ObjectWriteOperation op;
 	librados::bufferlist bl_dummy;
 	op.write_full(bl_dummy);
+#ifdef USE_SESSION_POOL
+	Session *s = session_pool_->GetSession();
+#else
 	Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
 	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
 	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op);
 	assert(r == 0);
+#ifdef USE_SESSION_POOL
+	session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	completion->release();
@@ -331,11 +363,18 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 	// 3. replace the dummy object in Storage Pool with a redirect
 
 	librados::ObjectWriteOperation op;
+#ifdef USE_SESSION_POOL
+	Session *s = session_pool_->GetSession();
+#else
 	Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
 	op.set_redirect(object_name, s->io_ctx_archive_, 0);
 	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
 	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
 	assert(r == 0);
+#ifdef USE_SESSION_POOL
+	session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	completion->release();
@@ -355,8 +394,15 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 
 void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err) {
   Timer2 t(&trace_, &lock_, object_name, "r", "-");
+#ifdef USE_SESSION_POOL
+  Session *s = session_pool_->GetSession();
+#else
   Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
   *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
+#ifdef USE_SESSION_POOL
+  session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
 }
 
 void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
@@ -377,10 +423,17 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
 	// remove the redirect in Storage Pool
 	librados::ObjectWriteOperation op;
 	op.remove();
+#ifdef USE_SESSION_POOL
+	Session *s = session_pool_->GetSession();
+#else
 	Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
 	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
 	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
 	assert(r == 0);
+#ifdef USE_SESSION_POOL
+	session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	completion->release();
@@ -439,10 +492,17 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
 	  v.append("slow");
 	  op.set_alloc_hint2(0, 0, 0);
 	}
+#ifdef USE_SESSION_POOL
+	Session *s = session_pool_->GetSession();
+#else
 	Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
 	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
 	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
 	assert(r == 0);
+#ifdef USE_SESSION_POOL
+	session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	completion->release();
@@ -470,11 +530,18 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
 	int r;
 	int version;
 	librados::ObjectWriteOperation op;
+#ifdef USE_SESSION_POOL
+	Session *s = session_pool_->GetSession();
+#else
 	Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
 	op.copy_from(object_name, s->io_ctx_storage_, 0);
 	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
 	r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
 	assert(r == 0);
+#ifdef USE_SESSION_POOL
+	session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
 	completion->wait_for_safe();
 	r = completion->get_return_value();
 	if (r != 0) {
@@ -521,10 +588,17 @@ int ObjectMover::GetLocation(const std::string &object_name) {
   librados::bufferlist bl;
   int err;
   op.getxattr("tier", &bl, &err);
+#ifdef USE_SESSION_POOL
+  Session *s = session_pool_->GetSession();
+#else
   Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
   librados::AioCompletion *completion = s->cluster_.aio_create_completion();
   r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0, NULL);
   assert(r == 0);
+#ifdef USE_SESSION_POOL
+  session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
   completion->wait_for_safe();
   r = completion->get_return_value();
   completion->release();
@@ -553,10 +627,17 @@ void ObjectMover::Lock(const std::string &object_name) {
   librados::bufferlist v2;
   v2.append("1");
   op.setxattr("lock", v2);
+#ifdef USE_SESSION_POOL
+  Session *s = session_pool_->GetSession();
+#else
   Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
   librados::AioCompletion *completion = s->cluster_.aio_create_completion();
   r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
   assert(r == 0);
+#ifdef USE_SESSION_POOL
+  session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
   completion->wait_for_safe();
   r = completion->get_return_value();
   completion->release();
@@ -575,10 +656,17 @@ void ObjectMover::Unlock(const std::string &object_name) {
   librados::bufferlist v2;
   v2.append("0");
   op.setxattr("lock", v2);
+#ifdef USE_SESSION_POOL
+  Session *s = session_pool_->GetSession();
+#else
   Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
   librados::AioCompletion *completion = s->cluster_.aio_create_completion();
   r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
   assert(r == 0);
+#ifdef USE_SESSION_POOL
+  session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
   completion->wait_for_safe();
   r = completion->get_return_value();
   completion->release();
@@ -591,10 +679,17 @@ void ObjectMover::Delete(const std::string &object_name, int *err) {
   // Remove the object in Storage Pool.
   librados::ObjectWriteOperation op;
   op.remove();
+#ifdef USE_SESSION_POOL
+  Session *s = session_pool_->GetSession();
+#else
   Session *s = sessions_[boost::this_thread::get_id()];
+#endif /* !USE_SESSION_POOL */
   librados::AioCompletion *completion = s->cluster_.aio_create_completion();
   r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
   assert(r == 0);
+#ifdef USE_SESSION_POOL
+  session_pool_->PutSession(s);
+#endif /* USE_SESSION_POOL */
   completion->wait_for_safe();
   r = completion->get_return_value();
   completion->release();

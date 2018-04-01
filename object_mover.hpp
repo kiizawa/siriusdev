@@ -7,6 +7,8 @@
 #include <iostream>
 #include <fstream>
 
+//#define USE_SESSION_POOL
+
 class Session {
 public:
   Session();
@@ -16,6 +18,39 @@ public:
   librados::Rados cluster_;
   librados::IoCtx io_ctx_storage_;
   librados::IoCtx io_ctx_archive_;
+};
+
+class SessionPool {
+public:
+  SessionPool(int session_pool_size) {
+    for (int i = 0; i < session_pool_size; i++) {
+      pool_.insert(std::make_pair(new Session, true));
+    }
+  }
+  ~SessionPool() {
+    for (std::map<Session*, bool>::iterator it = pool_.begin(); it != pool_.end(); it++) {
+      delete it->first;
+    }
+  }
+  Session* GetSession() {
+  retry:
+    boost::mutex::scoped_lock l(lock_);
+    for (std::map<Session*, bool>::iterator it = pool_.begin(); it != pool_.end(); it++) {
+      if (it->second) {
+	it->second = false;
+	return it->first;
+      }
+    }
+    usleep(100*1000);
+    goto retry;
+  }
+  void PutSession(Session* session) {
+    boost::mutex::scoped_lock l(lock_);
+    pool_[session] = true;
+  }
+private:
+  boost::mutex lock_;
+  std::map<Session*, bool> pool_;
 };
 
 /**
@@ -96,10 +131,17 @@ public:
    */
   int GetLocation(const std::string &object_name);
 private:
+#ifdef USE_SESSION_POOL
+  /**
+   *
+   */
+  SessionPool* session_pool_;
+#else
   /**
    *
    */
   std::map<boost::thread::id, Session*> sessions_;
+#endif /* !USE_SESSION_POOL */
   /**
    * Lock advisory lock
    *
