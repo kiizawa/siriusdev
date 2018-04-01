@@ -133,7 +133,14 @@ private:
 };
 
 Session::Session() {
+  Connect();
+}
 
+Session::~Session() {
+  cluster_.shutdown();
+}
+
+void Session::Connect() {
   int ret;
 
   /* Declare the cluster handle and required variables. */
@@ -194,8 +201,9 @@ Session::Session() {
   }
 }
 
-Session::~Session() {
+void Session::Reconnect() {
   cluster_.shutdown();
+  Connect();
 }
 
 ObjectMover::ObjectMover(int thread_pool_size, const std::string &trace_filename) {
@@ -270,7 +278,7 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
     {
       {
 	// 1. create an object in Archive Pool
-
+      retry:
 	librados::ObjectWriteOperation op;
 	op.write_full(bl);
 	librados::bufferlist v;
@@ -280,7 +288,20 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
 	r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
 	assert(r == 0);
+#if 1
 	completion->wait_for_safe();
+#else
+	int count = 0;
+	while (!completion->is_safe()) {
+	  if (count == 10) {
+	    completion->release();
+	    s->Reconnect();
+	    goto retry;
+	  }
+	  sleep(1);
+	  count++;
+	}
+#endif
 	r = completion->get_return_value();
 	completion->release();
 	if (r != 0) {

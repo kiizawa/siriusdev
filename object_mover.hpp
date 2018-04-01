@@ -11,6 +11,8 @@ class Session {
 public:
   Session();
   ~Session();
+  void Connect();
+  void Reconnect();
   librados::Rados cluster_;
   librados::IoCtx io_ctx_storage_;
   librados::IoCtx io_ctx_archive_;
