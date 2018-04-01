@@ -114,6 +114,9 @@ public:
       boost::mutex::scoped_lock l(*lock_);
       *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",s," << start_msec << std::endl;
     }
+#if 1
+    start_msec_ = start_msec;
+#endif
   }
   ~Timer2() {
     struct timeval finish;
@@ -123,6 +126,9 @@ public:
       boost::mutex::scoped_lock l(*lock_);
       *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",f," << finish_msec << std::endl;
     }
+    if (finish_msec - start_msec_ > 10000 && mode_ == "x") {
+      std::cout << "BUG!" << std::endl;
+    }
   }
 private:
   std::ofstream *ofs_;
@@ -130,6 +136,9 @@ private:
   std::string oid_;
   std::string mode_;
   std::string tier_;
+#if 1
+  unsigned long start_msec_;
+#endif
 };
 
 Session::Session() {
