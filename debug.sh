@@ -2,7 +2,7 @@
 
 OBJ=$1
 
-for i in `seq 12 23`
+for i in `seq 13 24`
 do
     node=192.168.0.$i
     ssh $node hostname

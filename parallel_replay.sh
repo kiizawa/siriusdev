@@ -3,10 +3,10 @@
 set -ex
 
 READ_PATTERN="p1"
-CLIENT_IDS="0 1 2 3 4"
-THREAD_NUM=64
+CLIENT_IDS="0 1 2"
+THREAD_NUM=128
 NUM_CLIENTS=`echo $CLIENT_IDS | wc -w`
-NUM_NODES=10
+NUM_NODES=6
 
 METHOD=pool
 HDD_TIER=a
@@ -90,6 +90,8 @@ echo "" >> $STATS
 ./analyser.exe $ALL_W_LOG >> $STATS
 echo "" >> $STATS
 echo "" >> $STATS
+
+exit
 
 # read (hdd)
 
