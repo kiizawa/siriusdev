@@ -8,12 +8,19 @@
 #include <vector>
 #include <list>
 
+//#define DEBUG
+
 unsigned long min_timestamp = -1UL;
 unsigned long max_timestamp = 0;
 unsigned long total = 0;
 int count = 0;
 
 std::map<std::string, std::list<unsigned long> > latencies;
+
+#ifdef DEBUG
+std::map<std::string, std::pair<unsigned long, unsigned long> > series;
+std::multimap<unsigned long, std::string> log;
+#endif /* DEBUG */
 
 std::vector<std::string> split(std::string input, char delimiter) {
   std::istringstream stream(input);
@@ -75,6 +82,10 @@ int main(int argc, char *argv[]) {
       std::list<unsigned long> &values = it->second;
       unsigned long latency = timestamp - values.front();
       total += latency;
+#ifdef DEBUG
+      log.insert(std::make_pair(latency, oid));
+      series[oid] = std::make_pair(values.front(), timestamp);
+#endif /* DEBUG */
       count++;
       values.pop_front();
       if (values.empty()) {
@@ -85,6 +96,17 @@ int main(int argc, char *argv[]) {
 
   std::cout << "average " << total/count << " [ms]" << std::endl;
   std::cout << "elapsed time " << (max_timestamp - min_timestamp) <<" [ms]" << std::endl;
-  
+
+#ifdef DEBUG
+  std::multimap<unsigned long, std::string>::reverse_iterator rit = log.rbegin();
+  std::cout << "max " << rit->first << "[ms] oid=" << rit->second << std::endl;
+  const long s = series[rit->second].first/1000;
+  struct tm* time_info_s = ::localtime(&s);
+  std::cout << "start  " << asctime(time_info_s);
+  const long e = series[rit->second].second/1000;
+  struct tm* time_info_e = ::localtime(&e);
+  std::cout << "finish " << asctime(time_info_e);
+#endif /* DEBUG */
+
   return 0;
 }
