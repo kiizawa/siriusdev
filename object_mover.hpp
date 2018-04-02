@@ -64,6 +64,7 @@ public:
       if (it->second) {
 	it->second = false;
 	reserve_map_[id] = it->first;
+	return;
       }
     }
     abort();
