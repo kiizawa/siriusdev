@@ -211,7 +211,7 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
 	  printf("write failed! error=%d\n", ret);
 	  abort();
 	}
-#if 1
+#if 0
 	struct timeval tv;
         ::gettimeofday(&tv, NULL);
 	unsigned long l = (tv.tv_sec * 1000 + tv.tv_usec / 1000) - start[j];
