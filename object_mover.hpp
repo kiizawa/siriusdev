@@ -9,6 +9,8 @@
 
 #include <rados/librados.hpp>
 
+//#define DEBUG
+
 class Session {
 public:
   enum Tier {
@@ -39,11 +41,16 @@ public:
     completion->wait_for_safe();
     r = completion->get_return_value();
     completion->release();
+    /* debug */
+    debug_count_++;
     return r;
   }
   librados::Rados cluster_;
   librados::IoCtx io_ctx_storage_;
   librados::IoCtx io_ctx_archive_;
+  /* debug */
+  int debug_count_;
+  unsigned long debug_last_used_;
 };
 
 class SessionPool {
@@ -54,6 +61,16 @@ public:
     }
   }
   ~SessionPool() {
+#ifdef DEBUG
+    std::multiset<int> counts;
+    for (std::map<Session*, bool>::iterator it = pool_.begin(); it != pool_.end(); it++) {
+      counts.insert(it->first->debug_count_);
+    }
+    std::multiset<int>::iterator it;
+    for (it = counts.begin(); it != counts.end(); it++) {
+      std::cout << "count " << *it << std::endl;
+    }
+#endif /* DEBUG */
     for (std::map<Session*, bool>::iterator it = pool_.begin(); it != pool_.end(); it++) {
       delete it->first;
     }
