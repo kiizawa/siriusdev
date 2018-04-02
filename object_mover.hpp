@@ -7,14 +7,42 @@
 #include <iostream>
 #include <fstream>
 
+#include <rados/librados.hpp>
+
 //#define USE_SESSION_POOL
 
 class Session {
 public:
+  enum Tier {
+    STORAGE,
+    ARCHIVE,
+  };
   Session();
   ~Session();
   void Connect();
   void Reconnect();
+  int AioOperate(Tier tier,
+		 const std::string& oid,
+		 librados::ObjectWriteOperation *op,
+		 int flags = 0) {
+    int r;
+    librados::AioCompletion *completion = cluster_.aio_create_completion();
+    switch (tier) {
+    case STORAGE:
+      r = io_ctx_storage_.aio_operate(oid, completion, op, flags);
+      break;
+    case ARCHIVE:
+      r = io_ctx_archive_.aio_operate(oid, completion, op, flags);
+      break;
+    default:
+      abort();
+    }
+    assert(r == 0);
+    completion->wait_for_safe();
+    r = completion->get_return_value();
+    completion->release();
+    return r;
+  }
   librados::Rados cluster_;
   librados::IoCtx io_ctx_storage_;
   librados::IoCtx io_ctx_archive_;

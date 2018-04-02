@@ -261,12 +261,12 @@ ObjectMover::~ObjectMover() {
 }
 
 void ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err) {
-  int r = 0;
+  Timer2 t(&trace_, &lock_, object_name, "w", TierToString(tier));
+  int r;
   switch(tier) {
   case FAST:
   case SLOW:
     {
-      int r;
       librados::ObjectWriteOperation op;
       librados::bufferlist v;
       if (tier == FAST) {
@@ -278,20 +278,8 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
       }
       op.write_full(bl);
       op.setxattr("tier", v);
-#ifdef USE_SESSION_POOL
-      Session *s = session_pool_->GetSession();
-#else
       Session *s = sessions_[boost::this_thread::get_id()];
-#endif /* !USE_SESSION_POOL */
-      librados::AioCompletion *completion = s->cluster_.aio_create_completion();
-      r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
-      assert(r == 0);
-#ifdef USE_SESSION_POOL
-      session_pool_->PutSession(s);
-#endif /* USE_SESSION_POOL */
-      completion->wait_for_safe();
-      r = completion->get_return_value();
-      completion->release();
+      r = s->AioOperate(Session::STORAGE, object_name, &op);
       if (r != 0) {
 	printf("write_full/setxattr failed r=%d\n", r);
 	break;
@@ -302,46 +290,17 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
     {
       {
 	// 1. create an object in Archive Pool
-      retry:
 	librados::ObjectWriteOperation op;
 	op.write_full(bl);
 	librados::bufferlist v;
 	v.append("archive");
 	op.setxattr("tier", v);
-#ifdef USE_SESSION_POOL
-	Session *s = session_pool_->GetSession();
-#else
 	Session *s = sessions_[boost::this_thread::get_id()];
-#endif /* !USE_SESSION_POOL */
-	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
-	r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
-	assert(r == 0);
-#ifdef USE_SESSION_POOL
-	session_pool_->PutSession(s);
-#endif /* USE_SESSION_POOL */
-	Timer2 t(&trace_, &lock_, object_name, "w", TierToString(tier));
-#if 1
-	completion->wait_for_safe();
-#else
-	int count = 0;
-	while (!completion->is_safe()) {
-	  if (count == 10) {
-	    completion->release();
-	    s->Reconnect();
-	    goto retry;
-	  }
-	  sleep(1);
-	  count++;
-	}
-#endif
-	r = completion->get_return_value();
-	completion->release();
+	r = s->AioOperate(Session::ARCHIVE, object_name, &op);
 	if (r != 0) {
 	  printf("write_full/setxattr failed r=%d\n", r);
 	  break;
 	}
-	*err = r;
-	return;
       }
       {
 	// 2. create a dummy object in Storage Pool
@@ -349,20 +308,8 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 	librados::ObjectWriteOperation op;
 	librados::bufferlist bl_dummy;
 	op.write_full(bl_dummy);
-#ifdef USE_SESSION_POOL
-	Session *s = session_pool_->GetSession();
-#else
 	Session *s = sessions_[boost::this_thread::get_id()];
-#endif /* !USE_SESSION_POOL */
-	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
-	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op);
-	assert(r == 0);
-#ifdef USE_SESSION_POOL
-	session_pool_->PutSession(s);
-#endif /* USE_SESSION_POOL */
-	completion->wait_for_safe();
-	r = completion->get_return_value();
-	completion->release();
+	r = s->AioOperate(Session::STORAGE, object_name, &op);
 	if (r != 0) {
 	  printf("write_full failed r=%d\n", r);
 	  break;
@@ -372,21 +319,9 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 	// 3. replace the dummy object in Storage Pool with a redirect
 
 	librados::ObjectWriteOperation op;
-#ifdef USE_SESSION_POOL
-	Session *s = session_pool_->GetSession();
-#else
 	Session *s = sessions_[boost::this_thread::get_id()];
-#endif /* !USE_SESSION_POOL */
 	op.set_redirect(object_name, s->io_ctx_archive_, 0);
-	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
-	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
-	assert(r == 0);
-#ifdef USE_SESSION_POOL
-	session_pool_->PutSession(s);
-#endif /* USE_SESSION_POOL */
-	completion->wait_for_safe();
-	r = completion->get_return_value();
-	completion->release();
+	r = s->AioOperate(Session::STORAGE, object_name, &op);
 	if (r != 0) {
 	  printf("set_redirect failed r=%d\n", r);
 	  break;
@@ -403,15 +338,8 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
 
 void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err) {
   Timer2 t(&trace_, &lock_, object_name, "r", "-");
-#ifdef USE_SESSION_POOL
-  Session *s = session_pool_->GetSession();
-#else
   Session *s = sessions_[boost::this_thread::get_id()];
-#endif /* !USE_SESSION_POOL */
   *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
-#ifdef USE_SESSION_POOL
-  session_pool_->PutSession(s);
-#endif /* USE_SESSION_POOL */
 }
 
 void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
