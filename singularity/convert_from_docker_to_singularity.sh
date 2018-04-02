@@ -1,6 +1,7 @@
 #!/bin/sh
 
 WORK_DIR=/dev/shm
+DOCKER_IMAGE=kiizawa/siriusdev
 
 cd $WORK_DIR
 mkdir cache
@@ -12,4 +13,4 @@ export SINGULARITY_TMPDIR=$WORK_DIR/tmp
 export SINGULARITY_LOCALCACHEDIR=$WORK_DIR/localcache
 
 singularity create siriusdev.img
-singularity build siriusdev.img docker://kiizawa/siriusdev
+singularity build siriusdev.img docker://$DOCKER_IMAGE
