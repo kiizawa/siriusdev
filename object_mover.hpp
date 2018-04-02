@@ -9,8 +9,6 @@
 
 #include <rados/librados.hpp>
 
-//#define USE_SESSION_POOL
-
 class Session {
 public:
   enum Tier {
@@ -60,25 +58,24 @@ public:
       delete it->first;
     }
   }
-  Session* GetSession() {
-  retry:
+  void ReserveSession(boost::thread::id id) {
     boost::mutex::scoped_lock l(lock_);
     for (std::map<Session*, bool>::iterator it = pool_.begin(); it != pool_.end(); it++) {
       if (it->second) {
 	it->second = false;
-	return it->first;
+	reserve_map_[id] = it->first;
       }
     }
-    usleep(100*1000);
-    goto retry;
+    abort();
   }
-  void PutSession(Session* session) {
+  Session* GetSession(boost::thread::id id) {
     boost::mutex::scoped_lock l(lock_);
-    pool_[session] = true;
+    return reserve_map_[id];
   }
 private:
   boost::mutex lock_;
   std::map<Session*, bool> pool_;
+  std::map<boost::thread::id, Session*> reserve_map_;
 };
 
 /**
@@ -159,17 +156,10 @@ public:
    */
   int GetLocation(const std::string &object_name);
 private:
-#ifdef USE_SESSION_POOL
   /**
    *
    */
   SessionPool* session_pool_;
-#else
-  /**
-   *
-   */
-  std::map<boost::thread::id, Session*> sessions_;
-#endif /* !USE_SESSION_POOL */
   /**
    * Lock advisory lock
    *
