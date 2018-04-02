@@ -141,7 +141,7 @@ private:
 #endif
 };
 
-Session::Session() {
+Session::Session() : debug_count_(0) {
   Connect();
 }
 
