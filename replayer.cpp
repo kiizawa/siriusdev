@@ -173,6 +173,13 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
   
   /* Create objects in Slow Tier (HDD) */
 
+#if 1
+  std::vector<unsigned long> start;
+  for (int i = 0; i < thread_num; i++) {
+    start.push_back(0);
+  }
+#endif
+
   std::vector<int> rets;
   for (int i = 0; i < thread_num; i++) {
     rets.push_back(0);
@@ -188,6 +195,11 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
       int ret = rets[j];
       if (ret == 0) {
 	rets[j] = 1;
+#if 1
+	struct timeval tv;
+        ::gettimeofday(&tv, NULL);
+	start[j] = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+#endif
 	waiting[j] = object;
 	om.CreateAsync(tier, object, *bl_map[it->second], &rets[j]);
 	// while (rets[j] == 1);
@@ -199,6 +211,14 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
 	  printf("write failed! error=%d\n", ret);
 	  abort();
 	}
+#if 1
+	struct timeval tv;
+        ::gettimeofday(&tv, NULL);
+	unsigned long l = (tv.tv_sec * 1000 + tv.tv_usec / 1000) - start[j];
+	if (l > 10*1000) {
+	  printf("write taking too long!\n");
+	}
+#endif
       }
     }
     if (used == thread_num) {
