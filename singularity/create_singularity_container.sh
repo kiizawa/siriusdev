@@ -8,4 +8,4 @@ then
     mkdir $HOME_DIR
 fi
 
-sudo singularity exec -H $HOME_DIR $IMAGE /bin/bash
+sudo singularity exec --writable -H $HOME_DIR $IMAGE /bin/bash
