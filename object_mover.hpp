@@ -82,11 +82,13 @@ public:
       {
 	boost::mutex::scoped_lock l(lock_);
 	std::map<Session*, unsigned long>::const_iterator it;
+	int hang = 0;
 	for (it = debug_last_used_.begin(); it != debug_last_used_.end(); it++) {
 	  if (now - it->second > 5000) {
-	    std::cout << "session %p hanging" << it->first << std::endl;
+	    hang++;
 	  }
 	}
+	std::cout << "session hang = " << hang << std::endl;
       }
       sleep(1);
     }
