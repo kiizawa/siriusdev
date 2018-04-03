@@ -11,57 +11,35 @@
 
 //#define DEBUG
 
+class SessionPool;
+
 class Session {
 public:
   enum Tier {
     STORAGE,
     ARCHIVE,
   };
-  Session();
+  Session(SessionPool* session_pool);
   ~Session();
   void Connect();
   void Reconnect();
-  int AioOperate(Tier tier,
-		 const std::string& oid,
-		 librados::ObjectWriteOperation *op,
-		 int flags = 0) {
-    int r;
-    librados::AioCompletion *completion = cluster_.aio_create_completion();
-    switch (tier) {
-    case STORAGE:
-      r = io_ctx_storage_.aio_operate(oid, completion, op, flags);
-      break;
-    case ARCHIVE:
-      r = io_ctx_archive_.aio_operate(oid, completion, op, flags);
-      break;
-    default:
-      abort();
-    }
-    assert(r == 0);
-    completion->wait_for_safe();
-    r = completion->get_return_value();
-    completion->release();
-    /* debug */
-    debug_count_++;
-    return r;
-  }
+  int AioOperate(Tier tier, const std::string& oid, librados::ObjectWriteOperation *op, int flags = 0);
   librados::Rados cluster_;
   librados::IoCtx io_ctx_storage_;
   librados::IoCtx io_ctx_archive_;
-  /* debug */
-  int debug_count_;
-  unsigned long debug_last_used_;
+private:
+  SessionPool* session_pool_;
 };
 
 class SessionPool {
 public:
   SessionPool(int session_pool_size) {
     for (int i = 0; i < session_pool_size; i++) {
-      pool_.insert(std::make_pair(new Session, true));
+      pool_.insert(std::make_pair(new Session(this), true));
     }
   }
   ~SessionPool() {
-#ifdef DEBUG
+#if 0
     std::multiset<int> counts;
     for (std::map<Session*, bool>::iterator it = pool_.begin(); it != pool_.end(); it++) {
       counts.insert(it->first->debug_count_);
@@ -70,7 +48,7 @@ public:
     for (it = counts.begin(); it != counts.end(); it++) {
       std::cout << "count " << *it << std::endl;
     }
-#endif /* DEBUG */
+#endif
     for (std::map<Session*, bool>::iterator it = pool_.begin(); it != pool_.end(); it++) {
       delete it->first;
     }
@@ -90,9 +68,33 @@ public:
     boost::mutex::scoped_lock l(lock_);
     return reserve_map_[id];
   }
+  void Notify(Session* session) {
+    boost::mutex::scoped_lock l(lock_);
+    struct timeval tv;
+    ::gettimeofday(&tv, NULL);
+    debug_last_used_[session] = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+  }
+  void WatchSessions() {
+    while (true) {
+      struct timeval tv;
+      ::gettimeofday(&tv, NULL);
+      unsigned long now = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+      {
+	boost::mutex::scoped_lock l(lock_);
+	std::map<Session*, unsigned long>::const_iterator it;
+	for (it = debug_last_used_.begin(); it != debug_last_used_.end(); it++) {
+	  if (now - it->second > 5000) {
+	    std::cout << "session %p hanging" << it->first << std::endl;
+	  }
+	}
+      }
+      sleep(1);
+    }
+  }
 private:
   boost::mutex lock_;
   std::map<Session*, bool> pool_;
+  std::map<Session*, unsigned long> debug_last_used_;
   std::map<boost::thread::id, Session*> reserve_map_;
 };
 

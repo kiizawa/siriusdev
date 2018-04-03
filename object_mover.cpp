@@ -141,7 +141,7 @@ private:
 #endif
 };
 
-Session::Session() : debug_count_(0) {
+Session::Session(SessionPool* session_pool) : session_pool_(session_pool) {
   Connect();
 }
 
@@ -215,6 +215,27 @@ void Session::Reconnect() {
   Connect();
 }
 
+int Session::AioOperate(Tier tier, const std::string& oid, librados::ObjectWriteOperation *op, int flags) {
+  int r;
+  librados::AioCompletion *completion = cluster_.aio_create_completion();
+  session_pool_->Notify(this);
+  switch (tier) {
+  case STORAGE:
+    r = io_ctx_storage_.aio_operate(oid, completion, op, flags);
+    break;
+  case ARCHIVE:
+    r = io_ctx_archive_.aio_operate(oid, completion, op, flags);
+    break;
+  default:
+    abort();
+  }
+  assert(r == 0);
+  completion->wait_for_safe();
+  r = completion->get_return_value();
+  completion->release();
+  return r;
+}
+
 ObjectMover::ObjectMover(int thread_pool_size, const std::string &trace_filename) {
   w_ = new boost::asio::io_service::work(ios_);
   session_pool_ = new SessionPool(thread_pool_size);
@@ -222,6 +243,7 @@ ObjectMover::ObjectMover(int thread_pool_size, const std::string &trace_filename
     boost::thread* t = thr_grp_.create_thread(boost::bind(&boost::asio::io_service::run, &ios_));
     session_pool_->ReserveSession(t->get_id());
   }
+  thr_grp_.create_thread(boost::bind(&SessionPool::WatchSessions, session_pool_));
   if (!trace_filename.empty()) {
     trace_.open(trace_filename);
   }
