@@ -2,9 +2,9 @@
 
 set -ex
 
-DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log
-CLIENTS="node-0 node-1 node-2 node-3 node-4"
-SERVERS="node-5 node-6 node-7 node-8 node-9 node-10 node-11 node-12 node-13 node-14"
+DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log_bd
+CLIENTS="node-0 node-1 node-2"
+SERVERS=" node-3 node-4 node-5 node-6 node-7 node-8"
 
 get_client_ip_addr () {
     HOST=$1
@@ -104,6 +104,19 @@ FIRST_SERVER=`echo $SERVERS | cut -d ' ' -f 1`
 
 if [ -n "$R" ]
 then
+
+    if [ ! -e /dev/shm/loop_db_ssd.img ]
+    then
+	dd if=/dev/zero of=/dev/shm/loop_db_ssd.img bs=1M count=2000
+	sudo losetup /dev/loop0 /dev/shm/loop_db_ssd.img
+    fi
+
+    if [ ! -e /dev/shm/loop_wal_ssd.img ]
+    then
+	dd if=/dev/zero of=/dev/shm/loop_wal_ssd.img bs=1M count=2000
+	sudo losetup /dev/loop1 /dev/shm/loop_wal_ssd.img
+    fi
+
     HOST_NAME=$HOST"-docker-ssd"
     HOST_ADDR=`get_server_ip_addr $HOST`
     if [ $HOST = $FIRST_SERVER ]
@@ -116,10 +129,22 @@ then
     fi
     POOL="storage_pool"
     OSD_TYPE="bluestore"
-    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdc"
+    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdc -e BS_DB_CREATE=true -e BS_DB_BD=/dev/loop0 -e BS_WAL_CREATE=true -e BS_WAL_BD=/dev/loop1"
     start
 
     sleep 5
+
+    if [ ! -e /dev/shm/loop_db_hdd.img ]
+    then
+	dd if=/dev/zero of=/dev/shm/loop_db_hdd.img bs=1M count=2000
+	sudo losetup /dev/loop2 /dev/shm/loop_db_hdd.img
+    fi
+
+    if [ ! -e /dev/shm/loop_wal_hdd.img ]
+    then
+	dd if=/dev/zero of=/dev/shm/loop_wal_hdd.img bs=1M count=2000
+	sudo losetup /dev/loop3 /dev/shm/loop_wal_hdd.img
+    fi
 
     HOST_NAME=$HOST"-docker-hdd"
     O=`echo $HOST_ADDR | cut -d . -f 4`
@@ -128,6 +153,6 @@ then
     RUN_OSD=1
     POOL="archive_pool"
     OSD_TYPE="bluestore"
-    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdb"
+    DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdb -e BS_DB_CREATE=true -e BS_DB_BD=/dev/loop2 -e BS_WAL_CREATE=true -e BS_WAL_BD=/dev/loop3"
     start
 fi
