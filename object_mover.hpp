@@ -88,26 +88,32 @@ public:
 	}
       }
       int index = 0;
-      std::multiset<unsigned long>::reverse_iterator rit = latencies.rbegin();
+      unsigned long median;
       std::vector<unsigned long> l;
+      std::multiset<unsigned long>::reverse_iterator rit = latencies.rbegin();
       while (rit != latencies.rend()) {
-	l.push_back(*rit);
-	rit++;
-	index++;
+	if (index < 5) {
+	  l.push_back(*rit);
+	}
 	if (index == 5) {
+	  median = *rit;
 	  break;
 	}
+	rit++;
+	index++;
       }
-#if 1
+#if 0
       if (l.size() == 5) {
 	std::cout << "latencies [s] ";
-	std::cout << "longest" ;
+	std::cout << "median = ";
+	std::cout << std::setw(4) << std::right << median/1000 << " ";
+	std::cout << "max = [" ;
 	std::cout << std::setw(4) << std::right << l[0]/1000 << " ";
 	std::cout << std::setw(4) << std::right << l[1]/1000 << " ";
 	std::cout << std::setw(4) << std::right << l[2]/1000 << " ";
 	std::cout << std::setw(4) << std::right << l[3]/1000 << " ";
 	std::cout << std::setw(4) << std::right << l[4]/1000 << " ";
-	std::cout << std::endl;
+	std::cout << "]" << std::endl;
       }
 #endif
       if (flag_) {
