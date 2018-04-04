@@ -189,6 +189,18 @@ void Session::Connect() {
     }
   }
 
+#ifndef USE_MICRO_TIERING
+  {
+    ret = cluster_.ioctx_create("cache_pool", io_ctx_storage_);
+    if (ret < 0) {
+      std::cerr << "Couldn't set up ioctx! error " << ret << std::endl;
+      abort();
+    } else {
+      // std::cout << "Created an ioctx for the pool." << std::endl;
+    }
+  }
+#endif /* !USE_MICRO_TIERING */
+
   {
     ret = cluster_.ioctx_create("storage_pool", io_ctx_storage_);
     if (ret < 0) {
@@ -275,6 +287,7 @@ ObjectMover::~ObjectMover() {
 void ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err) {
   Timer2 t(&trace_, &lock_, object_name, "w", TierToString(tier));
   int r;
+#ifdef USE_MICRO_TIERING
   switch(tier) {
   case FAST:
   case SLOW:
@@ -345,16 +358,111 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
   default:
     abort();
   }
+#else
+  switch(tier) {
+  case FAST:
+    {
+      librados::ObjectWriteOperation op;
+      librados::bufferlist v;
+      v.append("fast");
+      op.write_full(bl);
+      op.setxattr("tier", v);
+      librados::AioCompletion *completion = cluster_.aio_create_completion();
+      r = io_ctx_cache_.aio_operate(oid, completion, op, flags);
+      assert(r == 0);
+      completion->wait_for_safe();
+      r = completion->get_return_value();
+      completion->release();
+      if (r != 0) {
+	printf("write_full/setxattr failed r=%d\n", r);
+	break;
+      }
+      break;
+    }
+
+  case SLOW:
+  case ARCHIVE:
+    {
+      {
+	// 1. create an object in Slow/Archive Pool
+	librados::ObjectWriteOperation op;
+	op.write_full(bl);
+	librados::bufferlist v;
+	if (tier == SLOW) {
+	  v.append("slow");
+	} else {
+	  v.append("archive");
+	}
+	op.setxattr("tier", v);
+	librados::AioCompletion *completion = cluster_.aio_create_completion();
+	if (tier == SLOW) {
+	  r = io_ctx_storage_.aio_operate(oid, completion, op, flags);
+	} else {
+	  r = io_ctx_archive_.aio_operate(oid, completion, op, flags);
+	}
+	assert(r == 0);
+	completion->wait_for_safe();
+	r = completion->get_return_value();
+	completion->release();
+	if (r != 0) {
+	  printf("write_full/setxattr failed r=%d\n", r);
+	  break;
+	}
+      }
+      {
+	// 2. create a dummy object in Storage Pool
+
+	librados::ObjectWriteOperation op;
+	librados::bufferlist bl_dummy;
+	op.write_full(bl_dummy);
+	librados::AioCompletion *completion = cluster_.aio_create_completion();
+	r = io_ctx_cache_.aio_operate(oid, completion, op, flags);
+	assert(r == 0);
+	completion->wait_for_safe();
+	r = completion->get_return_value();
+	completion->release();
+	if (r != 0) {
+	  printf("write_full failed r=%d\n", r);
+	  break;
+	}
+      }
+      {
+	// 3. replace the dummy object in Storage Pool with a redirect
+
+	librados::ObjectWriteOperation op;
+	op.set_redirect(object_name, s->io_ctx_archive_, 0);
+	librados::AioCompletion *completion = cluster_.aio_create_completion();
+	r = io_ctx_cache_.aio_operate(oid, completion, op, flags);
+	assert(r == 0);
+	completion->wait_for_safe();
+	r = completion->get_return_value();
+	completion->release();
+	if (r != 0) {
+	  printf("set_redirect failed r=%d\n", r);
+	  break;
+	}
+      }
+      break;
+    }
+
+  default:
+    abort();
+  }
+#endif /* !USE_MICRO_TIERING */
   *err = r;
 }
 
 void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err) {
   Timer2 t(&trace_, &lock_, object_name, "r", "-");
-  Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+#ifdef USE_MICRO_TIERING
   *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
+#else
+  *err = s->io_ctx_cache_.read(object_name, *bl, 0, 0);
+#endif /* !USE_MICRO_TIERING */
 }
 
 void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
+#ifdef USE_MICRO_TIERING
   Timer2 t(&trace_, &lock_, object_name, "m", TierToString(tier));
   int r = 0;
   switch(tier) {
@@ -508,6 +616,164 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
     abort();
   }
   *err = r;
+#else
+  Timer2 t(&trace_, &lock_, object_name, "m", TierToString(tier));
+  int r = 0;
+
+  switch(tier) {
+  case FAST:
+    {
+      Lock(object_name);
+      int current_tier = GetLocation(object_name);
+      if (current_tier == tier) {
+	// the object is already stored in specified tier
+	Unlock(object_name);
+	break;
+      }
+      // remove the redirect in Cache Pool
+      librados::ObjectWriteOperation op;
+      op.remove();
+      Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+      librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+      if (current_tier == STORAGE) {
+	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
+      } else {
+	assert(current_tier == ARCHIVE);
+	r = s->io_ctx_archive_.aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
+      }
+      assert(r == 0);
+      completion->wait_for_safe();
+      r = completion->get_return_value();
+      completion->release();
+      if (r != 0) {
+	Unlock(object_name);
+	printf("remove failed r=%d\n", r);
+	*err = r;
+	return;
+      }
+      // TODO: the following operations are not atomic!
+      // promote the objcet to Storage Pool
+      librados::ObjectWriteOperation op2;
+      if (current_tier == STORAGE) {
+	op2.copy_from(object_name, s->io_ctx_storage_, 0);
+      } else {
+	assert(current_tier == ARCHIVE);
+	op2.copy_from(object_name, s->io_ctx_archive_, 0);
+      }
+      // modify the metadata
+      librados::bufferlist v2;
+      v2.append("fast");
+      op2.setxattr("tier", v2);
+      completion = s->cluster_.aio_create_completion();
+      r = s->io_ctx_cache_.aio_operate(object_name, completion, &op2, 0);
+      assert(r == 0);
+      completion->wait_for_safe();
+      r = completion->get_return_value();
+      completion->release();
+      if (r != 0) {
+	Unlock(object_name);
+	printf("setxattr failed r=%d\n", r);
+	break;
+      }
+      // remove the object in Archive Pool
+      librados::ObjectWriteOperation op3;
+      op3.remove();
+      completion = s->cluster_.aio_create_completion();
+      if (current_tier == STORAGE) {
+	r = s->io_ctx_storage_.aio_operate(object_name, completion, &op3);
+      } else {
+	assert(current_tier == ARCHIVE);
+	r = s->io_ctx_archive_.aio_operate(object_name, completion, &op3);
+      }
+      assert(r == 0);
+      completion->wait_for_safe();
+      r = completion->get_return_value();
+      completion->release();
+      if (r != 0) {
+	Unlock(object_name);
+	printf("remove failed r=%d\n", r);
+	break;
+      }
+    }
+
+  case STORAGE:
+  case ARCHIVE:
+    {
+      Lock(object_name);
+      if (GetLocation(object_name) == tier) {
+	// the object is already stored in Archive Pool
+	Unlock(object_name);
+	break;
+      }
+    retry_copy:
+      {
+	// demote the object
+	int r;
+	int version;
+	librados::ObjectWriteOperation op;
+	Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+	op.copy_from(object_name, s->io_ctx_storage_, 0);
+	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	if (tier == STORAGE) {
+	  r = s->io_ctx_storage_.aio_operate(object_name, completion, &op);
+	} else {
+	  assert(tier == ARCHIVE);
+	  r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
+	}
+	assert(r == 0);
+	completion->wait_for_safe();
+	r = completion->get_return_value();
+	if (r != 0) {
+	  printf("copy_from failed! r=%d\n", r);
+	  completion->release();
+	  Unlock(object_name);
+	  break;
+	}
+	version = completion->get_version64();
+	completion->release();
+
+	// replace the object in Storage Pool with a redirect
+	op.assert_version(version);
+	if (tier == STORAGE) {
+	  op.set_redirect(object_name, s->io_ctx_storage_, 1);
+	} else {
+	  assert(tier == ARCHIVE);
+	  op.set_redirect(object_name, s->io_ctx_archive_, 1);
+	}
+	// modify the metadata
+	librados::bufferlist bl;
+	if (tier == STORAGE) {
+	  bl.append("storage");
+	} else {
+	  assert(tier == ARCHIVE);
+	  bl.append("archive");
+	}
+	op.setxattr("tier", bl);
+	completion = s->cluster_.aio_create_completion();
+	if (tier == STORAGE) {
+	  r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
+	} else {
+	  assert(tier == ARCHIVE);
+	  r = s->io_ctx_archive_.aio_operate(object_name, completion, &op, 0);
+	}
+	assert(r == 0);
+	completion->wait_for_safe();
+	r = completion->get_return_value();
+	completion->release();
+	if (r != 0) {
+	  // the object was modified after copy_from() completed
+	  goto retry_copy;
+	}
+      }
+      Unlock(object_name);
+      break;
+    }
+
+  default:
+    abort();
+  }
+  *err = r;
+#endif /* !USE_MICRO_TIERING */
 }
 
 int ObjectMover::GetLocation(const std::string &object_name) {
@@ -518,7 +784,11 @@ int ObjectMover::GetLocation(const std::string &object_name) {
   op.getxattr("tier", &bl, &err);
   Session *s = session_pool_->GetSession(boost::this_thread::get_id());
   librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+#ifdef USE_MICRO_TIERING
   r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0, NULL);
+#else
+  r = s->io_ctx_cache_.aio_operate(object_name, completion, &op, 0, NULL);
+#endif /* !USE_MICRO_TIERING */
   assert(r == 0);
   completion->wait_for_safe();
   r = completion->get_return_value();
@@ -550,7 +820,11 @@ void ObjectMover::Lock(const std::string &object_name) {
   op.setxattr("lock", v2);
   Session *s = session_pool_->GetSession(boost::this_thread::get_id());
   librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+#ifdef USE_MICRO_TIERING
   r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
+#else
+  r = s->io_ctx_cache_.aio_operate(object_name, completion, &op, 0);
+#endif /* !USE_MICRO_TIERING */
   assert(r == 0);
   completion->wait_for_safe();
   r = completion->get_return_value();
@@ -572,7 +846,11 @@ void ObjectMover::Unlock(const std::string &object_name) {
   op.setxattr("lock", v2);
   Session *s = session_pool_->GetSession(boost::this_thread::get_id());
   librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+#ifdef USE_MICRO_TIERING
   r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
+#else
+  r = s->io_ctx_cache_.aio_operate(object_name, completion, &op, 0);
+#endif /* !USE_MICRO_TIERING */
   assert(r == 0);
   completion->wait_for_safe();
   r = completion->get_return_value();
@@ -581,6 +859,7 @@ void ObjectMover::Unlock(const std::string &object_name) {
 }
 
 void ObjectMover::Delete(const std::string &object_name, int *err) {
+#ifdef USE_MICRO_TIERING
   int r;
 
   // Remove the object in Storage Pool.
@@ -613,4 +892,51 @@ void ObjectMover::Delete(const std::string &object_name, int *err) {
   }
   *err = r;
   return;
+#else
+  int r;
+
+  // Remove the object in Cache Pool.
+  librados::ObjectWriteOperation op;
+  op.remove();
+  Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+  r = s->io_ctx_cache_.aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
+  assert(r == 0);
+  completion->wait_for_safe();
+  r = completion->get_return_value();
+  completion->release();
+  if (r != 0) {
+    printf("remove failed r=%d\n", r);
+    *err = r;
+    return;
+  }
+
+  // If the object exists in Storage Pool, remove it too.
+  op.assert_exists();
+  op.remove();
+  completion = s->cluster_.aio_create_completion();
+  r = s->io_ctx_storage_.aio_operate(object_name, completion, &op);
+  assert(r == 0);
+  completion->wait_for_safe();
+  r = completion->get_return_value();
+  completion->release();
+  if (r == -ENOENT) {
+    r = 0;
+  }
+
+  // If the object exists in Archive Pool, remove it too.
+  op.assert_exists();
+  op.remove();
+  completion = s->cluster_.aio_create_completion();
+  r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
+  assert(r == 0);
+  completion->wait_for_safe();
+  r = completion->get_return_value();
+  completion->release();
+  if (r == -ENOENT) {
+    r = 0;
+  }
+  *err = r;
+  return;
+#endif /* !USE_MICRO_TIERING */
 }
