@@ -250,9 +250,10 @@ ObjectMover::ObjectMover(int thread_pool_size, const std::string &trace_filename
 }
 
 ObjectMover::~ObjectMover() {
-  delete session_pool_;
+  session_pool_->End();
   delete w_;
   thr_grp_.join_all();
+  delete session_pool_;
 #ifdef SHOW_STATS
   printf("stats (Create)\n");
   stats_create.ShowStats();

@@ -33,7 +33,7 @@ private:
 
 class SessionPool {
 public:
-  SessionPool(int session_pool_size) {
+  SessionPool(int session_pool_size) : flag_(false) {
     for (int i = 0; i < session_pool_size; i++) {
       pool_.insert(std::make_pair(new Session(this), true));
     }
@@ -97,14 +97,21 @@ public:
 	  break;
 	}
       }
+      if (flag_) {
+	return;
+      }
       sleep(1);
     }
+  }
+  void End() {
+    flag_ = true;
   }
 private:
   boost::mutex lock_;
   std::map<Session*, bool> pool_;
   std::map<Session*, unsigned long> debug_last_used_;
   std::map<boost::thread::id, Session*> reserve_map_;
+  bool flag_;
 };
 
 /**
