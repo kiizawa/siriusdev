@@ -100,8 +100,13 @@ public:
       }
 #if 1
       if (l.size() == 5) {
-	std::cout << "long latencies [ms] " << std::setw(6) << std::right;
-	std::cout << l[0] << " " << l[1] << " " << l[2] << " " << l[3] << " " << l[4];
+	std::cout << "latencies [s] ";
+	std::cout << "longest" ;
+	std::cout << std::setw(4) << std::right << l[0]/1000 << " ";
+	std::cout << std::setw(4) << std::right << l[1]/1000 << " ";
+	std::cout << std::setw(4) << std::right << l[2]/1000 << " ";
+	std::cout << std::setw(4) << std::right << l[3]/1000 << " ";
+	std::cout << std::setw(4) << std::right << l[4]/1000 << " ";
 	std::cout << std::endl;
       }
 #endif
