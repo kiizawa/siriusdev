@@ -89,14 +89,20 @@ public:
       }
       int index = 0;
       std::multiset<unsigned long>::reverse_iterator rit = latencies.rbegin();
+      std::vector<unsigned long> l;
       while (rit != latencies.rend()) {
-	std::cout << "long latency[" << index << "] = " << *rit << std::endl;
+	l.push_back(*rit);
 	rit++;
 	index++;
 	if (index == 5) {
 	  break;
 	}
       }
+#if 0
+      std::cout << "long latencies [ms] ";
+      std::cout << setw(6) << l[0] << " " << l[1] << " " << l[2] << " " << l[3] << " " << l[4];
+      std::cout << std::endl;
+#endif
       if (flag_) {
 	return;
       }
