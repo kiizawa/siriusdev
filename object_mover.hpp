@@ -79,16 +79,23 @@ public:
       struct timeval tv;
       ::gettimeofday(&tv, NULL);
       unsigned long now = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+      std::multiset<unsigned long> latencies;
       {
 	boost::mutex::scoped_lock l(lock_);
 	std::map<Session*, unsigned long>::const_iterator it;
-	int hang = 0;
 	for (it = debug_last_used_.begin(); it != debug_last_used_.end(); it++) {
-	  if (now - it->second > 5000) {
-	    hang++;
-	  }
+	  latencies.insert(now - it->second);
 	}
-	std::cout << "session hang = " << hang << std::endl;
+      }
+      int index = 0;
+      std::multiset<unsigned long>::reverse_iterator rit = latencies.rbegin();
+      while (rit != latencies.rend()) {
+	std::cout << "long latency[" << index << "] = " << *rit << std::endl;
+	rit++;
+	index++;
+	if (index == 5) {
+	  break;
+	}
       }
       sleep(1);
     }
