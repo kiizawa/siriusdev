@@ -98,9 +98,9 @@ public:
 	  break;
 	}
       }
-#if 0
+#if 1
       std::cout << "long latencies [ms] ";
-      std::cout << setw(6) << l[0] << " " << l[1] << " " << l[2] << " " << l[3] << " " << l[4];
+      std::cout << std::setw(6) << l[0] << " " << l[1] << " " << l[2] << " " << l[3] << " " << l[4];
       std::cout << std::endl;
 #endif
       if (flag_) {
