@@ -99,9 +99,11 @@ public:
 	}
       }
 #if 1
-      std::cout << "long latencies [ms] ";
-      std::cout << std::setw(6) << l[0] << " " << l[1] << " " << l[2] << " " << l[3] << " " << l[4];
-      std::cout << std::endl;
+      if (l.size() == 5) {
+	std::cout << "long latencies [ms] " << std::setw(6) << std::right;
+	std::cout << l[0] << " " << l[1] << " " << l[2] << " " << l[3] << " " << l[4];
+	std::cout << std::endl;
+      }
 #endif
       if (flag_) {
 	return;
