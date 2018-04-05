@@ -103,6 +103,7 @@ $CEPH_BIN_DIR/ceph osd setcrushmap -i /root/crushmap $CONF_ARGS
 
 # create pool
 
+$CEPH_BIN_DIR/ceph osd pool create cache_pool $PG_NUM $KEY_ARGS cache_pool_rule $CONF_ARGS
 $CEPH_BIN_DIR/ceph osd pool create storage_pool $PG_NUM $KEY_ARGS storage_pool_rule $CONF_ARGS
 $CEPH_BIN_DIR/ceph osd pool create archive_pool $PG_NUM $KEY_ARGS archive_pool_rule $CONF_ARGS
 

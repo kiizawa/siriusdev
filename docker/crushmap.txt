@@ -30,14 +30,20 @@ root default {
 	alg straw2
 	hash 0	# rjenkins1
 }
-rack storage_pool {
+rack cache_pool {
 	id -2		# do not change unnecessarily
 	# weight 0.000
 	alg straw2
 	hash 0	# rjenkins1
 }
-rack archive_pool {
+rack storage_pool {
 	id -3		# do not change unnecessarily
+	# weight 0.000
+	alg straw2
+	hash 0	# rjenkins1
+}
+rack archive_pool {
+	id -4		# do not change unnecessarily
 	# weight 0.000
 	alg straw2
 	hash 0	# rjenkins1
@@ -53,8 +59,17 @@ rule replicated_rule {
 	step chooseleaf firstn 0 type host
 	step emit
 }
-rule storage_pool_rule {
+rule cache_pool_rule {
 	id 1
+	type replicated
+	min_size 1
+	max_size 10
+	step take cache_pool
+	step chooseleaf firstn 0 type host
+	step emit
+}
+rule storage_pool_rule {
+	id 2
 	type replicated
 	min_size 1
 	max_size 10
@@ -63,7 +78,7 @@ rule storage_pool_rule {
 	step emit
 }
 rule archive_pool_rule {
-	id 2
+	id 3
 	type replicated
 	min_size 1
 	max_size 10
