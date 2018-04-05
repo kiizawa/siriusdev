@@ -17,6 +17,11 @@ FROM dummy
 ## SSH login fix. Otherwise user is kicked off after login
 #RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 #
+## Generate keys
+#RUN ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ''
+#RUN cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+#RUN chmod 600 /root/.ssh/authorized_keys
+#
 #EXPOSE 22
 
 CMD ["/root/start_ceph.sh"]
