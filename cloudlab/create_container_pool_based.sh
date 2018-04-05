@@ -127,7 +127,7 @@ then
 	RUN_MON=0
 	RUN_OSD=1
     fi
-    POOL="storage_pool"
+    POOL="cache_pool"
     OSD_TYPE="bluestore"
     DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdc -e BS_DB_CREATE=true -e BS_DB_BD=/dev/loop0 -e BS_WAL_CREATE=true -e BS_WAL_BD=/dev/loop1"
     start
@@ -151,7 +151,7 @@ then
     HOST_ADDR=192.168.0.` expr $O + 1 `
     RUN_MON=0
     RUN_OSD=1
-    POOL="archive_pool"
+    POOL="storage_pool"
     OSD_TYPE="bluestore"
     DEVICE_ARGS="-e BS_FAST_CREATE=false -e BS_SLOW_BD=/dev/sdb -e BS_DB_CREATE=true -e BS_DB_BD=/dev/loop2 -e BS_WAL_CREATE=true -e BS_WAL_BD=/dev/loop3"
     start
