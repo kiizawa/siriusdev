@@ -700,6 +700,8 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
 	printf("remove failed r=%d\n", r);
 	break;
       }
+      Unlock(object_name);
+      break;
     }
 
   case SLOW:
