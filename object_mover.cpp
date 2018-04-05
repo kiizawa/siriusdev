@@ -189,7 +189,6 @@ void Session::Connect() {
     }
   }
 
-#ifndef USE_MICRO_TIERING
   if (cluster_.pool_lookup("cache_pool") != -ENOENT) {
     ret = cluster_.ioctx_create("cache_pool", io_ctx_cache_);
     if (ret < 0) {
@@ -199,7 +198,6 @@ void Session::Connect() {
       // std::cout << "Created an ioctx for the pool." << std::endl;
     }
   }
-#endif /* !USE_MICRO_TIERING */
 
   if (cluster_.pool_lookup("storage_pool") != -ENOENT) {
     ret = cluster_.ioctx_create("storage_pool", io_ctx_storage_);

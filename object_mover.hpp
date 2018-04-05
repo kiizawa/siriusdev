@@ -26,9 +26,7 @@ public:
   void Reconnect();
   int AioOperate(Tier tier, const std::string& oid, librados::ObjectWriteOperation *op, int flags = 0);
   librados::Rados cluster_;
-#ifndef USE_MICRO_TIERING
   librados::IoCtx io_ctx_cache_;
-#endif /* !USE_MICRO_TIERING */
   librados::IoCtx io_ctx_storage_;
   librados::IoCtx io_ctx_archive_;
 private:
