@@ -17,6 +17,7 @@ class SessionPool;
 class Session {
 public:
   enum Tier {
+    CACHE,
     STORAGE,
     ARCHIVE,
   };

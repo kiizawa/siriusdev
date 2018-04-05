@@ -230,6 +230,9 @@ int Session::AioOperate(Tier tier, const std::string& oid, librados::ObjectWrite
   librados::AioCompletion *completion = cluster_.aio_create_completion();
   session_pool_->Notify(this);
   switch (tier) {
+  case CACHE:
+    r = io_ctx_cache_.aio_operate(oid, completion, op, flags);
+    break;
   case STORAGE:
     r = io_ctx_storage_.aio_operate(oid, completion, op, flags);
     break;
