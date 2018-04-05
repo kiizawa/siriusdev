@@ -191,7 +191,7 @@ void Session::Connect() {
 
 #ifndef USE_MICRO_TIERING
   if (cluster_.pool_lookup("cache_pool") != -ENOENT) {
-    ret = cluster_.ioctx_create("cache_pool", io_ctx_storage_);
+    ret = cluster_.ioctx_create("cache_pool", io_ctx_cache_);
     if (ret < 0) {
       std::cerr << "Couldn't set up ioctx! error " << ret << std::endl;
       abort();
