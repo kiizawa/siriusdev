@@ -27,6 +27,11 @@ then
 PG_NUM=8
 fi
 
+if [ -z "$LOG_DIR" ]
+then
+LOG_DIR=/tmp/ceph
+fi
+
 FSID=`uuidgen`
 MON_DATA_DIR=/tmp/ceph/mon_data
 
@@ -52,13 +57,14 @@ osd pool default pgp num = $PG_NUM
 osd crush chooseleaf type = 1
 ms_bind_ipv6 = false
 
-log file = /tmp/ceph/\$name.log
+log file = $LOG_DIR/\$name.log
 
 [client]
 keyring = /etc/ceph/keyring
 
 [mon]
 mon data = $MON_DATA_DIR
+mon max pg per osd = 800
 
 EOF
 
@@ -97,6 +103,7 @@ $CEPH_BIN_DIR/ceph osd setcrushmap -i /root/crushmap $CONF_ARGS
 
 # create pool
 
+$CEPH_BIN_DIR/ceph osd pool create cache_pool $PG_NUM $KEY_ARGS cache_pool_rule $CONF_ARGS
 $CEPH_BIN_DIR/ceph osd pool create storage_pool $PG_NUM $KEY_ARGS storage_pool_rule $CONF_ARGS
 $CEPH_BIN_DIR/ceph osd pool create archive_pool $PG_NUM $KEY_ARGS archive_pool_rule $CONF_ARGS
 
@@ -172,6 +179,19 @@ fi
 
 if [ $OSD_TYPE = "bluestore" ]
 then
+if [ -z "$BS_FAST_CREATE" ]
+then
+BS_FAST_CREATE=false
+fi
+if [ -z "$BS_DB_CREATE" ]
+then
+BS_DB_CREATE=false
+fi
+if [ -z "$BS_WAL_CREATE" ]
+then
+BS_WAL_CREATE=false
+fi
+
 cat <<EOF >> $CEPH_CONF
 [osd.$osd_num]
 host = `hostname -s`
@@ -180,8 +200,10 @@ bluestore block create = true
 bluestore block path = $BS_SLOW_BD
 bluestore block fast create = $BS_FAST_CREATE
 bluestore block fast path = $BS_FAST_BD
-bluestore block db create = false
-bluestore block wal create = false
+bluestore block db create = $BS_DB_CREATE
+bluestore block db path = $BS_DB_BD
+bluestore block wal create = $BS_WAL_CREATE
+bluestore block wal path = $BS_WAL_BD
 bluestore mkfs on mount = true
 bluestore fsck on mount = false
 ;bluefs preextend wal files = true
@@ -222,6 +244,10 @@ $CEPH_BIN_DIR/ceph osd crush add osd.$osd_num 1.0 host=$HOSTNAME rack=$POOL $KEY
 $CEPH_BIN_DIR/ceph-osd -i $osd_num $CONF_ARGS
 
 fi
+
+# start sshd
+
+service ssh start
 
 while true
 do 
