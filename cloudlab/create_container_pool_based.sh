@@ -2,9 +2,9 @@
 
 set -ex
 
-DOCKER_IMAGE=kiizawa/siriusdev:ssh_pg_log_bd
-CLIENTS="node-0 node-1 node-2"
-SERVERS=" node-3 node-4 node-5 node-6 node-7 node-8"
+DOCKER_IMAGE=kiizawa/siriusdev
+CLIENTS="node-0 node-1"
+SERVERS="node-2 node-3 node-4 node-5"
 
 get_client_ip_addr () {
     HOST=$1
@@ -52,7 +52,7 @@ function start() {
 	-e CEPH_CONF_DIR=/share \
 	-e RUN_MON=$RUN_MON \
 	-e RUN_OSD=$RUN_OSD \
-	-e METHOD=$METHOD \
+	-e LOG_DIR=$LOG_DIR \
 	-e OSD_TYPE=$OSD_TYPE $DEVICE_ARGS \
 	-e POOL=$POOL \
 	-e CEPH_PUBLIC_NETWORK=$CEPH_NET \
@@ -61,8 +61,8 @@ function start() {
 }
 
 CEPH_NET=192.168.0.0/16
-METHOD="pool"
 HOST=`hostname`
+LOG_DIR=/dev/shm
 
 OSD_NUM_PER_POOL=`echo $SERVERS | wc -w`
 if [ $OSD_NUM_PER_POOL -lt 5 ]
