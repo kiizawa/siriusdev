@@ -58,8 +58,7 @@ extern "C" void sirius_ceph_move_async(int tier, const char *oid, int *err) {
  */
 extern "C" void sirius_ceph_read_async(const char *oid, char* buf, size_t len, int *ret) {
   std::string object_name(oid);
-  librados::bufferlist bl;
-  om->ReadAsync(object_name, &bl, ret);
+  om->CReadAsync(object_name, buf, len, ret);
 }
 
 /**

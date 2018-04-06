@@ -187,6 +187,11 @@ public:
    * @param[out] err  0 success
    * @param[out] err <0 failure
    */
+  void CRead(const std::string &object_name, char *buf, size_t len, int *err);
+  void CReadAsync(const std::string &object_name, char *buf, size_t len, int *err) {
+    auto f = std::bind(&ObjectMover::CRead, this, object_name, buf, len, err);
+    ios_.post(f);
+  }
   void Read(const std::string &object_name, librados::bufferlist *bl, int *err);
   void ReadAsync(const std::string &object_name, librados::bufferlist *bl, int *err) {
     auto f = std::bind(&ObjectMover::Read, this, object_name, bl, err);

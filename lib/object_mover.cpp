@@ -463,6 +463,16 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
   *err = r;
 }
 
+void ObjectMover::CRead(const std::string &object_name, char *buf, size_t len, int *err) {
+  int r;
+  librados::bufferlist bl;
+  Read(object_name, &bl, &r);
+  if (r >= 0) {
+    bl.copy(0, r, buf);
+  }
+  *err = r;
+}
+
 void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err) {
   Timer2 t(&trace_, &lock_, object_name, "r", "-");
   Session *s = session_pool_->GetSession(boost::this_thread::get_id());
