@@ -60,21 +60,15 @@ function start() {
 	$DOCKER_IMAGE
 }
 
+power2() { echo "x=l($1)/l(2); scale=0; 2^((x+0.5)/1)" | bc -l; }
+
 CEPH_NET=192.168.0.0/16
 HOST=`hostname`
 LOG_DIR=/dev/shm
 
 OSD_NUM_PER_POOL=`echo $SERVERS | wc -w`
-if [ $OSD_NUM_PER_POOL -lt 5 ]
-then
-    PG_NUM=128
-elif [ $OSD_NUM_PER_POOL -lt 10 ]
-then
-    PG_NUM=512
-elif [ $OSD_NUM_PER_POOL -lt 50 ]
-then
-    PG_NUM=1024
-fi
+PG_NUM=`expr $OSD_NUM_PER_POOL \* 100`
+PG_NUM=`power2 $PG_NUM`
 
 CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=$PG_NUM -e OP_THREADS=32 -e BS_CACHE_SIZE=0"
 
