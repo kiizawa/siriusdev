@@ -3,9 +3,11 @@
 int main() {
 
   int ret;
-  
+
+  const char* ceph_conf_filename = "/share/ceph.conf";
+
   /* initialize a Object Mover */
-  sirius_ceph_initialize();
+  sirius_ceph_initialize(ceph_conf_filename);
 
   const char *oid = "foo";
   const char *val = "bar";

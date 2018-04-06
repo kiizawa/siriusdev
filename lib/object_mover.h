@@ -14,7 +14,7 @@ ObjectMover *om;
 /**
  * Initialize
  */
-extern "C" void sirius_ceph_initialize() {
+extern "C" void sirius_ceph_initialize(const char* ceph_conf_filename) {
   om = new ObjectMover();
 }
 
