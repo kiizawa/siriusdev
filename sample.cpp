@@ -8,7 +8,7 @@ int main() {
   int ret = 0;
 
   librados::Rados cluster;
-  librados::IoCtx io_ctx_storage, io_ctx_archive;
+  librados::IoCtx io_ctx_cache, io_ctx_storage, io_ctx_archive;
 
   /* Declare the cluster handle and required variables. */
   char user_name[] = "client.admin";
@@ -51,6 +51,16 @@ int main() {
   }
 
   {
+    ret = cluster.ioctx_create("cache_pool", io_ctx_cache);
+    if (ret < 0) {
+      std::cerr << "Couldn't set up ioctx! error " << ret << std::endl;
+      exit(EXIT_FAILURE);
+    } else {
+      std::cout << "Created an ioctx for the pool." << std::endl;
+    }
+  }
+
+  {
     ret = cluster.ioctx_create("storage_pool", io_ctx_storage);
     if (ret < 0) {
       std::cerr << "Couldn't set up ioctx! error " << ret << std::endl;
@@ -89,9 +99,9 @@ int main() {
   while (ret == 1);
   assert(ret == 0);
 
-  /* Move the object to Archive Tier (Tape Drive) */
+  /* Move the object to Slow Tier (HDD) */
   ret = 1;
-  om.MoveAsync(ObjectMover::ARCHIVE, object, &ret);
+  om.MoveAsync(ObjectMover::SLOW, object, &ret);
   while (ret == 1);
   assert(ret == 0);
 
@@ -101,7 +111,7 @@ int main() {
    */
   librados::bufferlist buf1;
   buf1.append("baz");
-  ret = io_ctx_storage.write_full(object, buf1);
+  ret = io_ctx_cache.write_full(object, buf1);
   assert(ret == 0);
 
   /**
@@ -109,7 +119,7 @@ int main() {
    * All reads must go to Storage Pool regardless of the actual location of the object
    */
   librados::bufferlist buf2;
-  ret = io_ctx_storage.read(object, buf2, 0, 0);
+  ret = io_ctx_cache.read(object, buf2, 0, 0);
   std::string result(buf2.c_str(), buf2.length());
   assert(result == "baz");
 
