@@ -25,7 +25,7 @@ int main() {
   /* read the object */
   ret = 0;
   char buf[64];
-  sirius_ceph_read(oid, buf, 64, &ret);
+  sirius_ceph_read_async(oid, buf, 64, &ret);
   assert(ret == strlen(val));
 
   /* delete the object */

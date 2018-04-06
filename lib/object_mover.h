@@ -49,20 +49,20 @@ extern "C" void sirius_ceph_move_async(int tier, const char *oid, int *err) {
 }
 
 /**
- * Read an object
+ * Read an object asynchronously
  *
  * @param[in] oid the name of the object
  * @param[in] buf where to store the results 
  * @param[in] len the number of bytes to read
  * @param[out] ret number of bytes read on success, negative error code on failure
  */
-extern "C" void sirius_ceph_read(const char *oid, char* buf, size_t len, int *ret) {
+extern "C" void sirius_ceph_read_async(const char *oid, char* buf, size_t len, int *ret) {
   int r;
   std::string object_name(oid);
   librados::bufferlist bl;
-  om->Read(object_name, &bl, &r);
+  om->ReadAsync(object_name, &bl, &r);
   if (r >= 0) {
-    bl.copy(0, r, buf);    
+    bl.copy(0, r, buf);
   }
   *ret = r;
 }
