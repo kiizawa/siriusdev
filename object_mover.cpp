@@ -981,84 +981,73 @@ void ObjectMover::Unlock(const std::string &object_name) {
 }
 
 void ObjectMover::Delete(const std::string &object_name, int *err) {
+  int r;
 #ifdef USE_MICRO_TIERING
-  int r;
-
-  // Remove the object in Storage Pool.
-  librados::ObjectWriteOperation op;
-  op.remove();
-  Session *s = session_pool_->GetSession(boost::this_thread::get_id());
-  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
-  r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
-  assert(r == 0);
-  completion->wait_for_safe();
-  r = completion->get_return_value();
-  completion->release();
-  if (r != 0) {
-    printf("remove failed r=%d\n", r);
-    *err = r;
-    return;
+  {
+    // If the object is a redirect, remove the target.
+    librados::ObjectWriteOperation op;
+    op.remove();
+    Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+    librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+    r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
+    assert(r == 0);
+    completion->wait_for_safe();
+    r = completion->get_return_value();
+    completion->release();
+    if (r != 0) {
+      printf("remove failed r=%d\n", r);
+      *err = r;
+      return;
+    }
   }
-
-  // If the object exists in Archive Pool, remove it too.
-  op.assert_exists();
-  op.remove();
-  completion = s->cluster_.aio_create_completion();
-  r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
-  assert(r == 0);
-  completion->wait_for_safe();
-  r = completion->get_return_value();
-  completion->release();
-  if (r == -ENOENT) {
-    r = 0;
+  {
+    // If the object is a redirect, remove the redirect itself.
+    librados::ObjectWriteOperation op;
+    op.remove();
+    Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+    librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+    r = s->io_ctx_storage_.aio_operate(object_name, completion, &op, 0);
+    assert(r == 0);
+    completion->wait_for_safe();
+    r = completion->get_return_value();
+    completion->release();
+    if (r == -ENOENT) {
+      r = 0;
+    }
   }
-  *err = r;
-  return;
 #else
-  int r;
-
-  // Remove the object in Cache Pool.
-  librados::ObjectWriteOperation op;
-  op.remove();
-  Session *s = session_pool_->GetSession(boost::this_thread::get_id());
-  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
-  r = s->io_ctx_cache_.aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
-  assert(r == 0);
-  completion->wait_for_safe();
-  r = completion->get_return_value();
-  completion->release();
-  if (r != 0) {
-    printf("remove failed r=%d\n", r);
-    *err = r;
-    return;
+  {
+    // If the object is a redirect, remove the target.
+    librados::ObjectWriteOperation op;
+    op.remove();
+    Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+    librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+    r = s->io_ctx_cache_.aio_operate(object_name, completion, &op, 0);
+    assert(r == 0);
+    completion->wait_for_safe();
+    r = completion->get_return_value();
+    completion->release();
+    if (r != 0) {
+      printf("remove failed r=%d\n", r);
+      *err = r;
+      return;
+    }
   }
-
-  // If the object exists in Storage Pool, remove it too.
-  op.assert_exists();
-  op.remove();
-  completion = s->cluster_.aio_create_completion();
-  r = s->io_ctx_storage_.aio_operate(object_name, completion, &op);
-  assert(r == 0);
-  completion->wait_for_safe();
-  r = completion->get_return_value();
-  completion->release();
-  if (r == -ENOENT) {
-    r = 0;
+  {
+    // If the object is a redirect, remove the redirect itself.
+    librados::ObjectWriteOperation op;
+    op.remove();
+    Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+    librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+    r = s->io_ctx_cache_.aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
+    assert(r == 0);
+    completion->wait_for_safe();
+    r = completion->get_return_value();
+    completion->release();
+    if (r == -ENOENT) {
+      r = 0;
+    }
   }
-
-  // If the object exists in Archive Pool, remove it too.
-  op.assert_exists();
-  op.remove();
-  completion = s->cluster_.aio_create_completion();
-  r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
-  assert(r == 0);
-  completion->wait_for_safe();
-  r = completion->get_return_value();
-  completion->release();
-  if (r == -ENOENT) {
-    r = 0;
-  }
-  *err = r;
-  return;
 #endif /* !USE_MICRO_TIERING */
+  *err = r;
 }
