@@ -709,64 +709,182 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
   case ARCHIVE:
     {
       Lock(object_name);
-      if (GetLocation(object_name) == tier) {
+      int current_tier = GetLocation(object_name);
+      if (current_tier == tier) {
 	// the object is already stored in Storage/Archive Pool
 	Unlock(object_name);
 	break;
       }
-    retry_copy:
-      {
-	// demote the object
-	int r;
-	int version;
-	librados::ObjectWriteOperation op;
-	Session *s = session_pool_->GetSession(boost::this_thread::get_id());
-	op.copy_from(object_name, s->io_ctx_cache_, 0);
-	librados::AioCompletion *completion = s->cluster_.aio_create_completion();
-	if (tier == SLOW) {
-	  r = s->io_ctx_storage_.aio_operate(object_name, completion, &op);
-	} else {
-	  assert(tier == ARCHIVE);
-	  r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
-	}
-	assert(r == 0);
-	completion->wait_for_safe();
-	r = completion->get_return_value();
-	if (r != 0) {
-	  printf("copy_from failed! r=%d\n", r);
-	  completion->release();
-	  Unlock(object_name);
-	  break;
-	}
-	version = completion->get_version64();
-	completion->release();
+      if (current_tier == FAST) {
 
-	// replace the object in Cache Pool with a redirect
-	op.assert_version(version);
-	if (tier == SLOW) {
-	  op.set_redirect(object_name, s->io_ctx_storage_, 1);
-	} else {
-	  assert(tier == ARCHIVE);
-	  op.set_redirect(object_name, s->io_ctx_archive_, 1);
+	/* Move from Fast tier to Storage/Archive tier */
+
+      retry_copy:
+	{
+	  // demote the object
+	  int r;
+	  int version;
+	  librados::ObjectWriteOperation op;
+	  Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+	  op.copy_from(object_name, s->io_ctx_cache_, 0);
+	  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	  if (tier == SLOW) {
+	    r = s->io_ctx_storage_.aio_operate(object_name, completion, &op);
+	  } else {
+	    assert(tier == ARCHIVE);
+	    r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
+	  }
+	  assert(r == 0);
+	  completion->wait_for_safe();
+	  r = completion->get_return_value();
+	  if (r != 0) {
+	    printf("copy_from failed! r=%d\n", r);
+	    completion->release();
+	    Unlock(object_name);
+	    break;
+	  }
+	  version = completion->get_version64();
+	  completion->release();
+
+	  // replace the object in Cache Pool with a redirect
+	  op.assert_version(version);
+	  if (tier == SLOW) {
+	    op.set_redirect(object_name, s->io_ctx_storage_, 1);
+	  } else {
+	    assert(tier == ARCHIVE);
+	    op.set_redirect(object_name, s->io_ctx_archive_, 1);
+	  }
+	  // modify the metadata
+	  librados::bufferlist bl;
+	  if (tier == SLOW) {
+	    bl.append("storage");
+	  } else {
+	    assert(tier == ARCHIVE);
+	    bl.append("archive");
+	  }
+	  op.setxattr("tier", bl);
+	  completion = s->cluster_.aio_create_completion();
+	  r = s->io_ctx_cache_.aio_operate(object_name, completion, &op, 0);
+	  assert(r == 0);
+	  completion->wait_for_safe();
+	  r = completion->get_return_value();
+	  completion->release();
+	  if (r != 0) {
+	    // the object was modified after copy_from() completed
+	    goto retry_copy;
+	  }
 	}
-	// modify the metadata
-	librados::bufferlist bl;
-	if (tier == SLOW) {
-	  bl.append("storage");
-	} else {
-	  assert(tier == ARCHIVE);
-	  bl.append("archive");
+      } else {
+
+	/* move between Storage <--> Archive tiers */
+
+	{
+	  // 1. remove the redirect in Cache Pool.
+	  librados::ObjectWriteOperation op;
+	  op.remove();
+	  Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+	  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	  r = s->io_ctx_cache_.aio_operate(object_name, completion, &op, librados::OPERATION_IGNORE_REDIRECT);
+	  assert(r == 0);
+	  completion->wait_for_safe();
+	  r = completion->get_return_value();
+	  completion->release();
+	  if (r != 0) {
+	    printf("remove failed r=%d\n", r);
+	    Unlock(object_name);
+	    break;
+	  }
 	}
-	op.setxattr("tier", bl);
-	completion = s->cluster_.aio_create_completion();
-	r = s->io_ctx_cache_.aio_operate(object_name, completion, &op, 0);
-	assert(r == 0);
-	completion->wait_for_safe();
-	r = completion->get_return_value();
-	completion->release();
-	if (r != 0) {
-	  // the object was modified after copy_from() completed
-	  goto retry_copy;
+
+	{
+	  // 2. demote the object
+	  int r;
+	  librados::ObjectWriteOperation op;
+	  Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+	  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	  if (tier == SLOW) {
+	    assert(current_tier == ARCHIVE);
+	    op.copy_from(object_name, s->io_ctx_archive_, 0);
+	    r = s->io_ctx_storage_.aio_operate(object_name, completion, &op);
+	  } else {
+	    assert(current_tier == SLOW);
+	    op.copy_from(object_name, s->io_ctx_storage_, 0);
+	    r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
+	  }
+	  assert(r == 0);
+	  completion->wait_for_safe();
+	  r = completion->get_return_value();
+	  completion->release();
+	  if (r != 0) {
+	    printf("copy_from failed! r=%d\n", r);
+	    Unlock(object_name);
+	    break;
+	  }
+	}
+
+	{
+	  // 3. remove the object in Storage/Archive Pool.
+	  librados::ObjectWriteOperation op;
+	  op.remove();
+	  Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+	  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	  if (current_tier == SLOW) {
+	    r = s->io_ctx_storage_.aio_operate(object_name, completion, &op);
+	  } else {
+	    assert(current_tier == ARCHIVE);
+	    r = s->io_ctx_archive_.aio_operate(object_name, completion, &op);
+	  }
+	  assert(r == 0);
+	  completion->wait_for_safe();
+	  r = completion->get_return_value();
+	  completion->release();
+	  if (r != 0) {
+	    printf("remove failed r=%d\n", r);
+	    Unlock(object_name);
+	    break;
+	  }
+	}
+
+	{
+	  // 4. create a dummy object in Cache Pool
+
+	  librados::ObjectWriteOperation op;
+	  librados::bufferlist bl_dummy;
+	  op.write_full(bl_dummy);
+	  Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+	  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	  r = s->io_ctx_cache_.aio_operate(object_name, completion, &op);
+	  assert(r == 0);
+	  completion->wait_for_safe();
+	  r = completion->get_return_value();
+	  completion->release();
+	  if (r != 0) {
+	    printf("write_full failed r=%d\n", r);
+	    break;
+	  }
+	}
+
+	{
+	  // 5. replace the dummy object in Cache Pool with a redirect
+
+	  librados::ObjectWriteOperation op;
+	  Session *s = session_pool_->GetSession(boost::this_thread::get_id());
+	  if (tier == SLOW) {
+	    op.set_redirect(object_name, s->io_ctx_storage_, 0);
+	  } else {
+	    assert(tier == ARCHIVE);
+	    op.set_redirect(object_name, s->io_ctx_archive_, 0);
+	  }
+	  librados::AioCompletion *completion = s->cluster_.aio_create_completion();
+	  r = s->io_ctx_cache_.aio_operate(object_name, completion, &op);
+	  assert(r == 0);
+	  completion->wait_for_safe();
+	  r = completion->get_return_value();
+	  completion->release();
+	  if (r != 0) {
+	    printf("set_redirect failed r=%d\n", r);
+	    break;
+	  }
 	}
       }
       Unlock(object_name);
