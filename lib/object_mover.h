@@ -57,14 +57,9 @@ extern "C" void sirius_ceph_move_async(int tier, const char *oid, int *err) {
  * @param[out] ret number of bytes read on success, negative error code on failure
  */
 extern "C" void sirius_ceph_read_async(const char *oid, char* buf, size_t len, int *ret) {
-  int r;
   std::string object_name(oid);
   librados::bufferlist bl;
-  om->ReadAsync(object_name, &bl, &r);
-  if (r >= 0) {
-    bl.copy(0, r, buf);
-  }
-  *ret = r;
+  om->ReadAsync(object_name, &bl, ret);
 }
 
 /**
@@ -76,7 +71,7 @@ extern "C" void sirius_ceph_read_async(const char *oid, char* buf, size_t len, i
  */
 extern "C" void sirius_ceph_delete_async(const char *oid, int *err) {
   std::string object_name(oid);
-  om->Delete(object_name, err);
+  om->DeleteAsync(object_name, err);
 }
 
 /**
