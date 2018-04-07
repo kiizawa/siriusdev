@@ -12,11 +12,11 @@ RUN echo "export LD_LIBRARY_PATH=/usr/local/lib" >> ~/.bashrc
 
 RUN apt -y update && \
     apt -y install emacs && \
-    apt -y install g++ && \
-    apt -y install net-tools && \
-    apt -y install openssh-server && \
-    apt -y install git && \
-    apt -y install uuid-runtime
+                   g++ && \
+                   git && \
+                   net-tools && \
+                   openssh-server && \
+                   uuid-runtime
 
 # install ceph
 
