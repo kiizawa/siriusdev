@@ -10,26 +10,30 @@ RUN echo "export LD_LIBRARY_PATH=/usr/local/lib" >> ~/.bashrc
 
 # install packages
 
-RUN apt -y update
-RUN apt -y install emacs
-RUN apt -y install g++
-RUN apt -y install net-tools
-RUN apt -y install openssh-server
-RUN apt -y install git
-RUN apt -y install uuid-runtime
+RUN apt -y update && \
+    apt -y install emacs && \
+    apt -y install g++ && \
+    apt -y install net-tools && \
+    apt -y install openssh-server && \
+    apt -y install git && \
+    apt -y install uuid-runtime
 
 # install ceph
 
 WORKDIR /home
-RUN git clone git://github.com/ceph/ceph
-WORKDIR ceph
-RUN git fetch origin pull/18211/head:wip_bluestore_tiering
-RUN git checkout wip_bluestore_tiering
-RUN ./install-deps.sh
-RUN ./do_cmake.sh
-WORKDIR build
-RUN make -j2
-RUN make install -j2
+RUN git clone git://github.com/ceph/ceph && \
+    cd /home/ceph && \
+    git fetch origin pull/18211/head:wip_bluestore_tiering && \
+    git checkout wip_bluestore_tiering && \
+    ./install-deps.sh && \
+    ./do_cmake.sh && \
+    cd /home/ceph/build && \
+    make && \
+    make install && \
+    cd /home && \
+    rm -rf /home/ceph    
+
+# setup entrypoint
 
 COPY start_ceph.sh /root/
 COPY crushmap /root/
