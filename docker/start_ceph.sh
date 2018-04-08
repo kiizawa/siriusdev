@@ -97,8 +97,14 @@ EOF
 			     --add $HOSTNAME `hostname -i` --fsid $FSID $CEPH_CONF_DIR/monmap
 
     # crate mon data directory
-
     rm -rf $MON_DATA_DIR; mkdir -p $MON_DATA_DIR
+
+    # create log directory
+
+    if [ ! -e $LOG_DIR ]
+    then
+	mkdir -p $LOG_DIR
+    fi
 
     # populate monitor daemons
 
@@ -241,12 +247,13 @@ EOF
     fi
 
     # create osd data directory
+    rm -rf $OSD_DATA_DIR; mkdir -p $OSD_DATA_DIR
 
-    if [ -e $OSD_DATA_DIR ]
+    # create log directory
+
+    if [ ! -e $LOG_DIR ]
     then
-	rm -rf $OSD_DATA_DIR/*
-    else
-	mkdir -p $OSD_DATA_DIR
+	mkdir -p $LOG_DIR
     fi
 
     # initialize journal
