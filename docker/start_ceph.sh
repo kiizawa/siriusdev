@@ -2,6 +2,18 @@
 
 set -ex
 
+if [ -z "$CEPH_CONF_DIR" ]
+then
+      echo "CEPH_CONF_DIR must be specified!"
+      exit
+fi
+
+if [ -z "$CEPH_DIR" ]
+then
+      echo "CEPH_DIR must be specified!"
+      exit
+fi
+
 CEPH_CONF=$CEPH_CONF_DIR/ceph.conf
 CEPH_BIN_DIR=/usr/local/bin
 CEPH_LIB_DIR=/usr/local/lib
@@ -17,26 +29,29 @@ CONF_ARGS="--conf $CEPH_CONF"
 if [ -n "$RUN_MON" -a $RUN_MON = 1 ]
 then
 
-if [ -z "$POOL_SIZE" ]
-then
-POOL_SIZE=2
-fi
+    if [ -z "$POOL_SIZE" ]
+    then
+	POOL_SIZE=2
+    fi
 
-if [ -z "$PG_NUM" ]
-then
-PG_NUM=8
-fi
+    if [ -z "$PG_NUM" ]
+    then
+	PG_NUM=8
+    fi
 
-if [ -z "$LOG_DIR" ]
-then
-LOG_DIR=/tmp/ceph
-fi
+    if [ -z "$LOG_DIR" ]
+    then
+	LOG_DIR=$CEPH_DIR/log
+    fi
 
-FSID=`uuidgen`
-MON_DATA_DIR=/tmp/ceph/mon_data
+    FSID=`uuidgen`
+    if [ -z "$MON_DATA_DIR" ]
+    then
+	MON_DATA_DIR=$CEPH_DIR/mon_data
+    fi
 
-rm -f $CEPH_CONF
-cat <<EOF >> $CEPH_CONF
+    rm -f $CEPH_CONF
+    cat <<EOF >> $CEPH_CONF
 [global]
 
 fsid = $FSID
@@ -68,44 +83,50 @@ mon max pg per osd = 800
 
 EOF
 
-# create keyring
+    # create keyring
 
-$CEPH_BIN_DIR/ceph-authtool $CEPH_CONF_DIR/keyring --gen-key --name mon.0 --cap mon 'allow *' --create-keyring
-$CEPH_BIN_DIR/ceph-authtool $CEPH_CONF_DIR/keyring --gen-key --name client.admin --set-uid=0 --cap mon 'allow *' --cap osd 'allow *'
+    $CEPH_BIN_DIR/ceph-authtool $CEPH_CONF_DIR/keyring --gen-key \
+				--name mon.0 --cap mon 'allow *' --create-keyring
 
-# create monmap
+    $CEPH_BIN_DIR/ceph-authtool $CEPH_CONF_DIR/keyring --gen-key \
+				--name client.admin --set-uid=0 --cap mon 'allow *' --cap osd 'allow *'
 
-$CEPH_BIN_DIR/monmaptool --create --clobber --add $HOSTNAME `hostname -i` --fsid $FSID $CEPH_CONF_DIR/monmap
+    # create monmap
 
-# crate mon data directory
+    $CEPH_BIN_DIR/monmaptool --create --clobber \
+			     --add $HOSTNAME `hostname -i` --fsid $FSID $CEPH_CONF_DIR/monmap
 
-rm -rf $MON_DATA_DIR; mkdir -p $MON_DATA_DIR
+    # crate mon data directory
 
-# populate monitor daemons
+    rm -rf $MON_DATA_DIR; mkdir -p $MON_DATA_DIR
 
-$CEPH_BIN_DIR/ceph-mon --mkfs -i $HOSTNAME --monmap $CEPH_CONF_DIR/monmap --keyring $CEPH_CONF_DIR/keyring $CONF_ARGS
+    # populate monitor daemons
 
-# setup mgr daemons
+    $CEPH_BIN_DIR/ceph-mon --mkfs -i $HOSTNAME \
+			   --monmap $CEPH_CONF_DIR/monmap --keyring $CEPH_CONF_DIR/keyring $CONF_ARGS
 
-$CEPH_BIN_DIR/ceph-authtool $CEPH_CONF_DIR/keyring --gen-key --name mgr.0 --cap mon 'allow profile mgr' --cap osd 'allow *'
+    # setup mgr daemons
 
-# start mon daemons
+    $CEPH_BIN_DIR/ceph-authtool $CEPH_CONF_DIR/keyring --gen-key \
+				--name mgr.0 --cap mon 'allow profile mgr' --cap osd 'allow *'
 
-$CEPH_BIN_DIR/ceph-mon -i $HOSTNAME --pid-file $MON_DATA_DIR/mon.$HOSTNAME.pid --cluster ceph $CONF_ARGS
+    # start mon daemons
 
-# start mgr daemons
+    $CEPH_BIN_DIR/ceph-mon -i $HOSTNAME --pid-file $MON_DATA_DIR/mon.$HOSTNAME.pid --cluster ceph $CONF_ARGS
 
-$CEPH_BIN_DIR/ceph-mgr -i 0 $CONF_ARGS
+    # start mgr daemons
 
-# create crush rules
+    $CEPH_BIN_DIR/ceph-mgr -i 0 $CONF_ARGS
 
-$CEPH_BIN_DIR/ceph osd setcrushmap -i /root/crushmap $CONF_ARGS
+    # create crush rules
 
-# create pool
+    $CEPH_BIN_DIR/ceph osd setcrushmap -i /root/crushmap $CONF_ARGS
 
-$CEPH_BIN_DIR/ceph osd pool create cache_pool $PG_NUM $KEY_ARGS cache_pool_rule $CONF_ARGS
-$CEPH_BIN_DIR/ceph osd pool create storage_pool $PG_NUM $KEY_ARGS storage_pool_rule $CONF_ARGS
-$CEPH_BIN_DIR/ceph osd pool create archive_pool $PG_NUM $KEY_ARGS archive_pool_rule $CONF_ARGS
+    # create pool
+
+    $CEPH_BIN_DIR/ceph osd pool create cache_pool $PG_NUM $KEY_ARGS cache_pool_rule $CONF_ARGS
+    $CEPH_BIN_DIR/ceph osd pool create storage_pool $PG_NUM $KEY_ARGS storage_pool_rule $CONF_ARGS
+    $CEPH_BIN_DIR/ceph osd pool create archive_pool $PG_NUM $KEY_ARGS archive_pool_rule $CONF_ARGS
 
 fi
 
@@ -115,43 +136,43 @@ fi
 
 if [ -n "$RUN_OSD" -a $RUN_OSD = 1 ]
 then
-if [ -z "$OSD_DATA_DIR" ]
-then
-OSD_DATA_DIR=/tmp/ceph/osd_data
-fi
-if [ -z "$OSD_JOURNAL" ]
-then
-OSD_JOURNAL=$OSD_DATA_DIR"/journal"
-fi
-osd_num=`$CEPH_BIN_DIR/ceph osd create $CONF_ARGS`
+    if [ -z "$OSD_DATA_DIR" ]
+    then
+	OSD_DATA_DIR=$CEPH_DIR/osd_data
+    fi
+    if [ -z "$OSD_JOURNAL" ]
+    then
+	OSD_JOURNAL=$OSD_DATA_DIR"/journal"
+    fi
+    osd_num=`$CEPH_BIN_DIR/ceph osd create $CONF_ARGS`
 
-set +e
-osd_entry=`cat $CEPH_CONF | grep "\[osd\]"`
-set -e
+    set +e
+    osd_entry=`cat $CEPH_CONF | grep "\[osd\]"`
+    set -e
 
-if [ -z "$osd_entry" ]
-then
+    if [ -z "$osd_entry" ]
+    then
 
-if [ -z "$OP_THREADS" ]
-then
-OP_THREADS=2
-fi
+	if [ -z "$OP_THREADS" ]
+	then
+	    OP_THREADS=2
+	fi
 
-ROCKSDB_CACHE_FLAG=true
-if [ -z "$BS_CACHE_SIZE" ]
-then
-BS_CACHE_SIZE_HDD=1G
-BS_CACHE_SIZE_SSD=3G
-else
-BS_CACHE_SIZE_HDD=$BS_CACHE_SIZE
-BS_CACHE_SIZE_SSD=$BS_CACHE_SIZE
-if [ $BS_CACHE_SIZE -eq 0 ]
-then
-ROCKSDB_CACHE_FLAG=false
-fi
-fi
+	ROCKSDB_CACHE_FLAG=true
+	if [ -z "$BS_CACHE_SIZE" ]
+	then
+	    BS_CACHE_SIZE_HDD=1G
+	    BS_CACHE_SIZE_SSD=3G
+	else
+	    BS_CACHE_SIZE_HDD=$BS_CACHE_SIZE
+	    BS_CACHE_SIZE_SSD=$BS_CACHE_SIZE
+	    if [ $BS_CACHE_SIZE -eq 0 ]
+	    then
+		ROCKSDB_CACHE_FLAG=false
+	    fi
+	fi
 
-cat <<EOF >> $CEPH_CONF
+	cat <<EOF >> $CEPH_CONF
 [osd]
 osd data = $OSD_DATA_DIR
 osd journal = $OSD_JOURNAL
@@ -175,24 +196,24 @@ debug reserver = 10
 debug objclass = 20
 
 EOF
-fi
+    fi
 
-if [ $OSD_TYPE = "bluestore" ]
-then
-if [ -z "$BS_FAST_CREATE" ]
-then
-BS_FAST_CREATE=false
-fi
-if [ -z "$BS_DB_CREATE" ]
-then
-BS_DB_CREATE=false
-fi
-if [ -z "$BS_WAL_CREATE" ]
-then
-BS_WAL_CREATE=false
-fi
+    if [ $OSD_TYPE = "bluestore" ]
+    then
+	if [ -z "$BS_FAST_CREATE" ]
+	then
+	    BS_FAST_CREATE=false
+	fi
+	if [ -z "$BS_DB_CREATE" ]
+	then
+	    BS_DB_CREATE=false
+	fi
+	if [ -z "$BS_WAL_CREATE" ]
+	then
+	    BS_WAL_CREATE=false
+	fi
 
-cat <<EOF >> $CEPH_CONF
+	cat <<EOF >> $CEPH_CONF
 [osd.$osd_num]
 host = `hostname -s`
 osd objectstore = bluestore
@@ -210,38 +231,39 @@ bluestore fsck on mount = false
 ;bluestore default buffered read = false
 
 EOF
-else
-cat <<EOF >> $CEPH_CONF
+    else
+	cat <<EOF >> $CEPH_CONF
 [osd.$osd_num]
 host = `hostname -s`
 osd objectstore = filestore
 
 EOF
-fi
+    fi
 
-# create osd data directory
+    # create osd data directory
 
-if [ -e $OSD_DATA_DIR ]
-then
-    rm -rf $OSD_DATA_DIR/*
-else
-    mkdir -p $OSD_DATA_DIR
-fi
+    if [ -e $OSD_DATA_DIR ]
+    then
+	rm -rf $OSD_DATA_DIR/*
+    else
+	mkdir -p $OSD_DATA_DIR
+    fi
 
-# initialize journal
+    # initialize journal
 
-rm -f $OSD_JOURNAL
+    rm -f $OSD_JOURNAL
 
-KEY_ARGS="--keyring $CEPH_CONF_DIR/keyring"
+    KEY_ARGS="--keyring $CEPH_CONF_DIR/keyring"
 
-$CEPH_BIN_DIR/ceph-osd -i $osd_num --mkfs $CONF_ARGS
-$CEPH_BIN_DIR/ceph-authtool $CEPH_CONF_DIR/keyring --gen-key --name osd.$osd_num --cap osd 'allow w' --cap mon 'allow rwx' $CONF_ARGS
+    $CEPH_BIN_DIR/ceph-osd -i $osd_num --mkfs $CONF_ARGS
+    $CEPH_BIN_DIR/ceph-authtool $CEPH_CONF_DIR/keyring --gen-key \
+				--name osd.$osd_num --cap osd 'allow w' --cap mon 'allow rwx' $CONF_ARGS
 
-$CEPH_BIN_DIR/ceph osd crush add osd.$osd_num 1.0 host=$HOSTNAME rack=$POOL $KEY_ARGS $CONF_ARGS
+    $CEPH_BIN_DIR/ceph osd crush add osd.$osd_num 1.0 host=$HOSTNAME rack=$POOL $KEY_ARGS $CONF_ARGS
 
-# start osd daemons
+    # start osd daemons
 
-$CEPH_BIN_DIR/ceph-osd -i $osd_num $CONF_ARGS
+    $CEPH_BIN_DIR/ceph-osd -i $osd_num $CONF_ARGS
 
 fi
 
