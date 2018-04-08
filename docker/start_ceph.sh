@@ -183,7 +183,7 @@ then
 osd data = $OSD_DATA_DIR
 osd journal = $OSD_JOURNAL
 osd op threads = $OP_THREADS
-# needed to use ext3 as OSD
+# needed to use ext4
 osd max object name len = 256
 osd max object namespace len = 64
 bluestore cache size hdd = $BS_CACHE_SIZE_HDD
@@ -262,7 +262,9 @@ EOF
     # initialize journal
 
     rm -f $OSD_JOURNAL
-
+    # needed to use ext3
+    dd if=/dev/zero of=$OSD_JOURNAL bs=1 count=1073741824
+    
     KEY_ARGS="--keyring $CEPH_CONF_DIR/keyring"
 
     $CEPH_BIN_DIR/ceph-osd -i $osd_num --mkfs $CONF_ARGS
