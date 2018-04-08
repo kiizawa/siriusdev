@@ -263,8 +263,8 @@ EOF
 
     rm -f $OSD_JOURNAL
     # needed to use ext3
-    dd if=/dev/zero of=$OSD_JOURNAL bs=1 count=1073741824
-    
+    dd if=/dev/zero of=$OSD_JOURNAL bs=1M count=1K
+
     KEY_ARGS="--keyring $CEPH_CONF_DIR/keyring"
 
     $CEPH_BIN_DIR/ceph-osd -i $osd_num --mkfs $CONF_ARGS
