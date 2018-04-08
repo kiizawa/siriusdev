@@ -183,6 +183,9 @@ then
 osd data = $OSD_DATA_DIR
 osd journal = $OSD_JOURNAL
 osd op threads = $OP_THREADS
+# needed to use ext3 as OSD
+osd max object name len = 256
+osd max object namespace len = 64
 bluestore cache size hdd = $BS_CACHE_SIZE_HDD
 bluestore cache size ssd = $BS_CACHE_SIZE_SSD
 rocksdb_cache_index_and_filter_blocks = $ROCKSDB_CACHE_FLAG
