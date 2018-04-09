@@ -19,6 +19,13 @@ CLIENTS="node-0 node-1"
 SERVERS="node-2 node-3 node-4 node-5"
 
 function start() {
+
+    singularity instance.start \
+        -H $DUMMY_HOME_DIR \
+	-B $CEPH_CONF_DIR:/ceph_conf \
+	-B $CEPH_DIR:/ceph \
+	$SINGULARITY_IMAGE siriusdev
+
     SINGULARITYENV_RUN_MON=$RUN_MON \
     SINGULARITYENV_RUN_OSD=$RUN_OSD \
     SINGULARITYENV_CEPH_CONF_DIR=/ceph_conf \
@@ -30,10 +37,10 @@ function start() {
     SINGULARITYENV_POOL=$POOL \
     SINGULARITYENV_CEPH_PUBLIC_NETWORK=$CEPH_NET \
     SINGULARITYENV_HOSTNAME=$HOSTNAME \
-    singularity shell --writable -H $DUMMY_HOME_DIR \
-	                         -B $CEPH_CONF_DIR:/ceph_conf \
-                                 -B $CEPH_DIR:/ceph \
-                                  $SINGULARITY_IMAGE
+        singularity run instance://siriusdev /root/start_ceph.sh
+
+    singularity exec instance://siriusdev \
+	bash -c 'LD_LIBRARY_PATH=/usr/local/lib ceph -s -c /ceph_conf/ceph.conf'
 }
 
 power2() { echo "x=l($1)/l(2); scale=0; 2^((x+0.5)/1)" | bc -l; }
