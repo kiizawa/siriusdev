@@ -9,12 +9,6 @@ CEPH_NET=10.10.1.0/16
 CEPH_CONF_DIR=/tmp/share
 CEPH_DIR=/tmp/ceph
 
-DUMMY_HOME_DIR=/tmp/home
-if [ ! -e $DUMMY_HOME_DIR ]
-then
-    mkdir $DUMMY_HOME_DIR
-fi
-
 CLIENTS="node-0 node-1"
 SERVERS="node-2 node-3 node-4 node-5"
 
@@ -30,7 +24,7 @@ function start() {
     SINGULARITYENV_POOL=$POOL \
     SINGULARITYENV_CEPH_PUBLIC_NETWORK=$CEPH_NET \
     SINGULARITYENV_HOSTNAME=$HOSTNAME \
-    singularity shell --writable -H $DUMMY_HOME_DIR \
+    singularity shell --writable -H /tmp \
 	                         -B $CEPH_CONF_DIR:/ceph_conf \
                                  -B $CEPH_DIR:/ceph \
                                   $SINGULARITY_IMAGE
