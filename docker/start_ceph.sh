@@ -244,7 +244,7 @@ EOF
 	cat <<EOF >> $CEPH_CONF
 [osd.$osd_num]
 host = `hostname -s`
-osd objectstore = filestore
+osd objectstore = $OSD_TYPE
 
 EOF
     fi
