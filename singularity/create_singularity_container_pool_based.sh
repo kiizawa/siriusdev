@@ -31,8 +31,8 @@ then
     mkdir $CEPH_DIR_HDD
 fi
 
-CLIENTS="node-0 node-1"
-SERVERS="node-2 node-3 node-4 node-5"
+CLIENTS=""
+SERVERS="node-1"
 
 function start() {
 
@@ -41,7 +41,7 @@ function start() {
         -H $DUMMY_HOME_DIR \
 	-B $CEPH_CONF_DIR:/ceph_conf \
 	-B $CEPH_DIR:/ceph \
-	$SINGULARITY_IMAGE siriusdev
+	$SINGULARITY_IMAGE $INSTANCE
 
     SINGULARITYENV_RUN_MON=$RUN_MON \
     SINGULARITYENV_RUN_OSD=$RUN_OSD \
@@ -54,10 +54,13 @@ function start() {
     SINGULARITYENV_POOL=$POOL \
     SINGULARITYENV_CEPH_PUBLIC_NETWORK=$CEPH_NET \
     SINGULARITYENV_HOSTNAME=$HOSTNAME \
-    $DEVICE_ARGS \
-        singularity run --writable instance://siriusdev /root/start_ceph.sh
+    SINGULARITYENV_BS_FAST_CREATE=false \
+    SINGULARITYENV_BS_SLOW_BD=$BS_SLOW_BD \
+        singularity run --writable instance://$INSTANCE /root/start_ceph.sh
 
-    singularity exec instance://siriusdev \
+    sleep 3
+
+    singularity exec instance://$INSTANCE \
 	bash -c 'LD_LIBRARY_PATH=/usr/local/lib ceph -s -c /ceph_conf/ceph.conf'
 }
 
@@ -107,7 +110,8 @@ then
     OSD_TYPE="bluestore"
     DUMMY_HOME_DIR=$DUMMY_HOME_DIR_SSD
     CEPH_DIR=$CEPH_DIR_SSD
-    DEVICE_ARGS="SINGULARITYENV_BS_FAST_CREATE=false SINGULARITYENV_BS_SLOW_BD=/dev/sdc"
+    BS_SLOW_BD=/dev/sdc
+    INSTANCE=ssd
     start
 
     sleep 5
@@ -119,6 +123,7 @@ then
     OSD_TYPE="bluestore"
     DUMMY_HOME_DIR=$DUMMY_HOME_DIR_HDD
     CEPH_DIR=$CEPH_DIR_HDD
-    DEVICE_ARGS="SINGULARITYENV_BS_FAST_CREATE=false SINGULARITYENV_BS_SLOW_BD=/dev/sdb"
+    BS_SLOW_BD=/dev/sdb
+    INSTANCE=hdd
     start
 fi
