@@ -4,16 +4,15 @@ set -ex
 
 SINGULARITY_IMAGE=/dev/shm/siriusdev.img
 HOST=`hostname`
-HOST_NAME=$HOST"-docker"
-HOST_ADDR=`hostname -i`
-CEPH_NET=`ifconfig | grep $HOST_ADDR  | cut -d ':' -f 3 | cut -d ' ' -f 1`
-CEPH_CONF_DIR=/share
+HOSTNAME=$HOST"-singularity"
+CEPH_NET=10.10.1.0/16
+CEPH_CONF_DIR=/tmp/share
 CEPH_DIR=/tmp/ceph
 
-HOME_DIR=/home/dummy
-if [ ! -e $HOME_DIR ]
+DUMMY_HOME_DIR=/tmp/home
+if [ ! -e $DUMMY_HOME_DIR ]
 then
-    mkdir $HOME_DIR
+    mkdir $DUMMY_HOME_DIR
 fi
 
 CLIENTS="node-0 node-1"
@@ -22,15 +21,19 @@ SERVERS="node-2 node-3 node-4 node-5"
 function start() {
     SINGULARITYENV_RUN_MON=$RUN_MON \
     SINGULARITYENV_RUN_OSD=$RUN_OSD \
-    SINGULARITYENV_CEPH_CONF_DIR=$CEPH_CONF_DIR \
-    SINGULARITYENV_CEPH_DIR=$CEPH_DIR \
+    SINGULARITYENV_CEPH_CONF_DIR=/ceph_conf \
+    SINGULARITYENV_CEPH_DIR=/ceph \
     SINGULARITYENV_POOL_SIZE=1 \
     SINGULARITYENV_PG_NUM=$PG_NUM \
     SINGULARITYENV_OP_THREADS=32 \
     SINGULARITYENV_OSD_TYPE=$OSD_TYPE \
     SINGULARITYENV_POOL=$POOL \
     SINGULARITYENV_CEPH_PUBLIC_NETWORK=$CEPH_NET \
-    singularity shell --writable -H $HOME_DIR $SINGULARITY_IMAGE
+    SINGULARITYENV_HOSTNAME=$HOSTNAME \
+    singularity shell --writable -H $DUMMY_HOME_DIR \
+	                         -B $CEPH_CONF_DIR:/ceph_conf \
+                                 -B $CEPH_DIR:/ceph \
+                                  $SINGULARITY_IMAGE
 }
 
 power2() { echo "x=l($1)/l(2); scale=0; 2^((x+0.5)/1)" | bc -l; }
