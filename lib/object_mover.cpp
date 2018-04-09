@@ -169,7 +169,7 @@ void Session::Connect() {
 
   /* Read a Ceph configuration file to configure the cluster handle. */
   {
-    ret = cluster_.conf_read_file(ceph_conf_file_);
+    ret = cluster_.conf_read_file(ceph_conf_file_.c_str());
     if (ret < 0) {
       std::cerr << "Couldn't read the Ceph configuration file! error " << ret << std::endl;
       abort();

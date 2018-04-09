@@ -87,7 +87,7 @@ int main() {
    * thread_pool_size controls the parallelism.
    */
   int thread_pool_size = 128;
-  ObjectMover om(thread_pool_size);
+  ObjectMover om("/share/ceph.conf", thread_pool_size);
 
   /* Create an object in Fast Tier (SSD) */
   std::string object("foo");
