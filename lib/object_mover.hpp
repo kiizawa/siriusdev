@@ -21,7 +21,7 @@ public:
     STORAGE,
     ARCHIVE,
   };
-  Session(SessionPool* session_pool);
+  Session(SessionPool* session_pool, const std::string &ceph_conf_file);
   ~Session();
   void Connect();
   void Reconnect();
@@ -32,13 +32,14 @@ public:
   librados::IoCtx io_ctx_archive_;
 private:
   SessionPool* session_pool_;
+  std::string ceph_conf_file_;
 };
 
 class SessionPool {
 public:
-  SessionPool(int session_pool_size) : flag_(false) {
+  SessionPool(const std::string &ceph_conf_file, int session_pool_size) : flag_(false) {
     for (int i = 0; i < session_pool_size; i++) {
-      pool_.insert(std::make_pair(new Session(this), true));
+      pool_.insert(std::make_pair(new Session(this, ceph_conf_file), true));
     }
   }
   ~SessionPool() {
@@ -151,7 +152,7 @@ public:
    *
    * @param[in] thread_pool_size numbuer of threads that execute asynchronous I/Os
    */
-  ObjectMover(int thread_pool_size = 32, const std::string &trace_filename = "");
+  ObjectMover(const std::string &ceph_conf_file, int thread_pool_size = 32, const std::string &trace_filename = "");
   ~ObjectMover();
   /**
    * Create an object in the specified tier

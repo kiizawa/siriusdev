@@ -141,7 +141,7 @@ private:
 #endif
 };
 
-Session::Session(SessionPool* session_pool) : session_pool_(session_pool) {
+Session::Session(SessionPool* session_pool, const std::string &ceph_conf_file) : session_pool_(session_pool), ceph_conf_file_(ceph_conf_file) {
   Connect();
 }
 
@@ -169,7 +169,7 @@ void Session::Connect() {
 
   /* Read a Ceph configuration file to configure the cluster handle. */
   {
-    ret = cluster_.conf_read_file("/share/ceph.conf");
+    ret = cluster_.conf_read_file(ceph_conf_file_);
     if (ret < 0) {
       std::cerr << "Couldn't read the Ceph configuration file! error " << ret << std::endl;
       abort();
@@ -249,9 +249,9 @@ int Session::AioOperate(Tier tier, const std::string& oid, librados::ObjectWrite
   return r;
 }
 
-ObjectMover::ObjectMover(int thread_pool_size, const std::string &trace_filename) {
+ObjectMover::ObjectMover(const std::string &ceph_conf_file, int thread_pool_size, const std::string &trace_filename) {
   w_ = new boost::asio::io_service::work(ios_);
-  session_pool_ = new SessionPool(thread_pool_size);
+  session_pool_ = new SessionPool(ceph_conf_file, thread_pool_size);
   for (int i = 0; i < thread_pool_size; ++i) {
     boost::thread* t = thr_grp_.create_thread(boost::bind(&boost::asio::io_service::run, &ios_));
     session_pool_->ReserveSession(t->get_id());
