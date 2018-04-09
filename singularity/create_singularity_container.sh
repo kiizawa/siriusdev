@@ -28,6 +28,7 @@ SERVERS="node-2 node-3 node-4 node-5"
 function start() {
 
     singularity instance.start \
+	--writable \
         -H $DUMMY_HOME_DIR \
 	-B $CEPH_CONF_DIR:/ceph_conf \
 	-B $CEPH_DIR:/ceph \
@@ -44,7 +45,7 @@ function start() {
     SINGULARITYENV_POOL=$POOL \
     SINGULARITYENV_CEPH_PUBLIC_NETWORK=$CEPH_NET \
     SINGULARITYENV_HOSTNAME=$HOSTNAME \
-        singularity run instance://siriusdev /root/start_ceph.sh
+        singularity run --writable instance://siriusdev /root/start_ceph.sh
 
     singularity exec instance://siriusdev \
 	bash -c 'LD_LIBRARY_PATH=/usr/local/lib ceph -s -c /ceph_conf/ceph.conf'
