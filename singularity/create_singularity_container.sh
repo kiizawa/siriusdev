@@ -22,8 +22,8 @@ else
     rm -rf $CEPH_DIR/*
 fi
 
-CLIENTS="node-0 node-1"
-SERVERS="node-2 node-3 node-4 node-5"
+CLIENTS=""
+SERVERS="node-3 node-4 node-5"
 
 function start() {
 
