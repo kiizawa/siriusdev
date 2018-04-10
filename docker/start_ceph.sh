@@ -50,6 +50,11 @@ then
 	MON_DATA_DIR=$CEPH_DIR/mon_data
     fi
 
+    if [ -z "$MON_ADDR" ]
+    then
+	MON_ADDR=`hostname -i`
+    fi
+
     rm -f $CEPH_CONF
     cat <<EOF >> $CEPH_CONF
 [global]
