@@ -57,7 +57,7 @@ then
 fsid = $FSID
 
 mon initial members = $HOSTNAME
-mon host = `hostname -i`
+mon host = `$MON_ADDR`
 public network = $CEPH_PUBLIC_NETWORK
 
 auth cluster required = none
@@ -262,8 +262,8 @@ EOF
     # initialize journal
 
     rm -f $OSD_JOURNAL
-    ## needed to use ext3
-    #dd if=/dev/zero of=$OSD_JOURNAL bs=1M count=1K
+    # needed to use ext3
+    dd if=/dev/zero of=$OSD_JOURNAL bs=1M count=1K
 
     KEY_ARGS="--keyring $CEPH_CONF_DIR/keyring"
 
