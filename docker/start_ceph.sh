@@ -62,7 +62,7 @@ then
 fsid = $FSID
 
 mon initial members = $HOSTNAME
-mon host = `$MON_ADDR`
+mon host = $MON_ADDR
 public network = $CEPH_PUBLIC_NETWORK
 
 auth cluster required = none
