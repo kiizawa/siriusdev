@@ -2,9 +2,9 @@
 
 set -ex
 
-DOCKER_IMAGE=kiizawa/siriusdev
-CLIENTS="node-0 node-1"
-SERVERS="node-2 node-3 node-4 node-5"
+DOCKER_IMAGE=kiizawa/siriusdev:memstore_journal_monip
+CLIENTS="node-0"
+SERVERS="node-1 node-2"
 
 declare -A IP_ADDRS
 IP_ADDRS=(
@@ -34,9 +34,12 @@ function start() {
 	--ip $HOST_ADDR \
 	-v /dev/shm/$HOST_NAME:/dev/shm \
 	-v /tmp/share:/share \
+	-v /tmp/ceph:/tmp/ceph \
 	-e CEPH_CONF_DIR=/share \
 	-e RUN_MON=$RUN_MON \
 	-e RUN_OSD=$RUN_OSD \
+	-e CEPH_CONF_DIR=$CEPH_CONF_DIR \
+	-e CEPH_DIR=$CEPH_DIR \
 	-e LOG_DIR=$LOG_DIR \
 	-e OSD_TYPE=$OSD_TYPE $DEVICE_ARGS \
 	-e POOL=$POOL \
@@ -52,6 +55,16 @@ HOST=`hostname`
 HOST_NAME=$HOST"-docker"
 HOST_ADDR=${IP_ADDRS[$HOST]}
 LOG_DIR=/dev/shm
+
+CEPH_CONF_DIR=/share
+CEPH_DIR=/tmp/ceph
+
+if [ -e "$CEPH_DIR" ]
+then
+    sudo rm -rf $CEPH_DIR/*
+else
+    mkdir $CEPH_DIR
+fi
 
 OSD_NUM_PER_POOL=`echo $SERVERS | wc -w`
 PG_NUM=`expr $OSD_NUM_PER_POOL \* 100`
