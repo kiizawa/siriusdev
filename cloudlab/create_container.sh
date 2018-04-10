@@ -26,21 +26,20 @@ IP_ADDRS=(
 )
 
 function start() {
-    rm -rf /dev/shm/$HOST_NAME; mkdir /dev/shm/$HOST_NAME
     docker run -it -d --privileged  \
 	--name $HOST_NAME \
 	--net cephnet \
 	--hostname $HOST_NAME \
 	--ip $HOST_ADDR \
-	-v /dev/shm/$HOST_NAME:/dev/shm \
+	-v /dev/shm:/dev/shm \
 	-v /tmp/share:/share \
-	-v /tmp/ceph:/tmp/ceph \
 	-e CEPH_CONF_DIR=/share \
 	-e RUN_MON=$RUN_MON \
 	-e RUN_OSD=$RUN_OSD \
 	-e CEPH_CONF_DIR=$CEPH_CONF_DIR \
 	-e CEPH_DIR=$CEPH_DIR \
 	-e LOG_DIR=$LOG_DIR \
+	-e OSD_JOURNAL=$OSD_JOURNAL \
 	-e OSD_TYPE=$OSD_TYPE $DEVICE_ARGS \
 	-e POOL=$POOL \
 	-e CEPH_PUBLIC_NETWORK=$CEPH_NET \
@@ -54,11 +53,20 @@ CEPH_NET=192.168.0.0/16
 HOST=`hostname`
 HOST_NAME=$HOST"-docker"
 HOST_ADDR=${IP_ADDRS[$HOST]}
-LOG_DIR=/dev/shm
+
+LOG_DIR=/dev/shm/$HOST_NAME
+if [ -e "$LOG_DIR" ]
+then
+    sudo rm -rf $LOG_DIR/*
+else
+    mkdir $LOG_DIR
+fi
+
+OSD_JOURNAL=/tmp/journal
 
 CEPH_CONF_DIR=/share
-CEPH_DIR=/tmp/ceph
 
+CEPH_DIR=/dev/shm/ceph
 if [ -e "$CEPH_DIR" ]
 then
     sudo rm -rf $CEPH_DIR/*
@@ -104,7 +112,7 @@ then
 	RUN_MON=0
 	RUN_OSD=1
     fi
-    OSD_TYPE="bluestore"
+    OSD_TYPE="filestore"
     DEVICE_ARGS="-e BS_FAST_BD=/dev/sdc -e BS_SLOW_BD=/dev/sdb"
     POOL="storage_pool"
     start
