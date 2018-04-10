@@ -260,9 +260,11 @@ ObjectMover::ObjectMover(const std::string &ceph_conf_file, int thread_pool_size
   if (!trace_filename.empty()) {
     trace_.open(trace_filename);
   }
+  task_manager_ = new TaskManager(trace_filename);
 }
 
 ObjectMover::~ObjectMover() {
+  delete task_manager_;
   session_pool_->End();
   delete w_;
   thr_grp_.join_all();
@@ -285,8 +287,8 @@ ObjectMover::~ObjectMover() {
   }
 }
 
-void ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err) {
-  Timer2 t(&trace_, &lock_, object_name, "w", TierToString(tier));
+void ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err, unsigned long tid) {
+  //Timer2 t(&trace_, &lock_, object_name, "w", TierToString(tier));
   int r;
 #ifdef USE_MICRO_TIERING
   switch(tier) {
@@ -460,33 +462,41 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
     abort();
   }
 #endif /* !USE_MICRO_TIERING */
-  *err = r;
+  if (task_manager_->FinishTask(tid)) {
+    *err = r;
+  }
 }
 
-void ObjectMover::CRead(const std::string &object_name, char *buf, size_t len, int *err) {
+void ObjectMover::CRead(const std::string &object_name, char *buf, size_t len, int *err, unsigned long tid) {
   int r;
   librados::bufferlist bl;
-  Read(object_name, &bl, &r);
+  Read(object_name, &bl, &r, tid);
   if (r >= 0) {
     bl.copy(0, r, buf);
   }
-  *err = r;
+  if (task_manager_->FinishTask(tid)) {
+    *err = r;
+  }
 }
 
-void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err) {
-  Timer2 t(&trace_, &lock_, object_name, "r", "-");
+void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err, unsigned long tid) {
+  //Timer2 t(&trace_, &lock_, object_name, "r", "-");
+  int r;
   Session *s = session_pool_->GetSession(boost::this_thread::get_id());
 #ifdef USE_MICRO_TIERING
-  *err = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
+  r = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
 #else
-  *err = s->io_ctx_cache_.read(object_name, *bl, 0, 0);
+  r = s->io_ctx_cache_.read(object_name, *bl, 0, 0);
 #endif /* !USE_MICRO_TIERING */
+  if (task_manager_->FinishTask(tid)) {
+    *err = r;
+  }
 }
 
-void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
-#ifdef USE_MICRO_TIERING
-  Timer2 t(&trace_, &lock_, object_name, "m", TierToString(tier));
+void ObjectMover::Move(Tier tier, const std::string &object_name, int *err, unsigned long tid) {
+  //Timer2 t(&trace_, &lock_, object_name, "m", TierToString(tier));
   int r = 0;
+#ifdef USE_MICRO_TIERING
   switch(tier) {
   case FAST:
   case SLOW:
@@ -637,11 +647,7 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
   default:
     abort();
   }
-  *err = r;
 #else
-  Timer2 t(&trace_, &lock_, object_name, "m", TierToString(tier));
-  int r = 0;
-
   switch(tier) {
   case FAST:
     {
@@ -904,8 +910,10 @@ void ObjectMover::Move(Tier tier, const std::string &object_name, int *err) {
   default:
     abort();
   }
-  *err = r;
 #endif /* !USE_MICRO_TIERING */
+  if (task_manager_->FinishTask(tid)) {
+    *err = r;
+  }
 }
 
 int ObjectMover::GetLocation(const std::string &object_name) {
@@ -990,7 +998,7 @@ void ObjectMover::Unlock(const std::string &object_name) {
   assert(r == 0);
 }
 
-void ObjectMover::Delete(const std::string &object_name, int *err) {
+void ObjectMover::Delete(const std::string &object_name, int *err, unsigned long tid) {
   int r;
 #ifdef USE_MICRO_TIERING
   {
@@ -1059,5 +1067,7 @@ void ObjectMover::Delete(const std::string &object_name, int *err) {
     }
   }
 #endif /* !USE_MICRO_TIERING */
-  *err = r;
+  if (task_manager_->FinishTask(tid)) {
+    *err = r;
+  }
 }

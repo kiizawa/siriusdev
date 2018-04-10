@@ -163,9 +163,11 @@ public:
    * @param[out] err  0 success
    * @param[out] err <0 failure
    */
-  void Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err);
+  void Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err, unsigned long tid);
   void CreateAsync(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err) {
-    auto f = std::bind(&ObjectMover::Create, this, tier, object_name, bl, err);
+    unsigned long tid = task_manager_->GetTid();
+    auto f = std::bind(&ObjectMover::Create, this, tier, object_name, bl, err, tid);
+    task_manager_->StartTask(tid, object_name, "w", TierToString(tier), f);
     ios_.post(f);
   }
   /**
@@ -176,9 +178,11 @@ public:
    * @param[out] err  0 success
    * @param[out] err <0 failure
    */
-  void Move(Tier tier, const std::string &object_name, int *err);
+  void Move(Tier tier, const std::string &object_name, int *err, unsigned long tid);
   void MoveAsync(Tier tier, const std::string &object_name, int *err) {
-    auto f = std::bind(&ObjectMover::Move, this, tier, object_name, err);
+    unsigned long tid = task_manager_->GetTid();
+    auto f = std::bind(&ObjectMover::Move, this, tier, object_name, err, tid);
+    task_manager_->StartTask(tid, object_name, "m", TierToString(tier), f);
     ios_.post(f);
   }
   /**
@@ -188,14 +192,18 @@ public:
    * @param[out] err  0 success
    * @param[out] err <0 failure
    */
-  void CRead(const std::string &object_name, char *buf, size_t len, int *err);
+  void CRead(const std::string &object_name, char *buf, size_t len, int *err, unsigned long tid);
   void CReadAsync(const std::string &object_name, char *buf, size_t len, int *err) {
-    auto f = std::bind(&ObjectMover::CRead, this, object_name, buf, len, err);
+    unsigned long tid = task_manager_->GetTid();
+    auto f = std::bind(&ObjectMover::CRead, this, object_name, buf, len, err, tid);
+    task_manager_->StartTask(tid, object_name, "r", "-", f);
     ios_.post(f);
   }
-  void Read(const std::string &object_name, librados::bufferlist *bl, int *err);
+  void Read(const std::string &object_name, librados::bufferlist *bl, int *err, unsigned long tid);
   void ReadAsync(const std::string &object_name, librados::bufferlist *bl, int *err) {
-    auto f = std::bind(&ObjectMover::Read, this, object_name, bl, err);
+    unsigned long tid = task_manager_->GetTid();
+    auto f = std::bind(&ObjectMover::Read, this, object_name, bl, err, tid);
+    task_manager_->StartTask(tid, object_name, "r", "-", f);
     ios_.post(f);
   }
   /**
@@ -205,9 +213,11 @@ public:
    * @param[out] err  0 success
    * @param[out] err <0 failure
    */
-  void Delete(const std::string &object_name, int *err);
+  void Delete(const std::string &object_name, int *err, unsigned long tid);
   void DeleteAsync(const std::string &object_name, int *err) {
-    auto f = std::bind(&ObjectMover::Delete, this, object_name, err);
+    unsigned long tid = task_manager_->GetTid();
+    auto f = std::bind(&ObjectMover::Delete, this, object_name, err, tid);
+    task_manager_->StartTask(tid, object_name, "d", "-", f);
     ios_.post(f);
   }
 
@@ -220,10 +230,125 @@ public:
    */
   int GetLocation(const std::string &object_name);
 private:
+  class TaskManager {
+  public:
+    struct TaskInfo {
+      std::string oid;
+      std::string mode;
+      std::string tier;
+      boost::function<void ()> task;
+      unsigned long start;
+    };
+    TaskManager(const std::string &trace_filename) : tid_counter_(0), flag_(false) {
+      if (!trace_filename.empty()) {
+	trace_.open(trace_filename);
+      }
+    }
+    ~TaskManager() {
+      if (trace_.is_open()) {
+	trace_.close();
+      }
+    }
+    unsigned long GetCurrentTime() {
+      struct timeval tv;
+      ::gettimeofday(&tv, NULL);
+      return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+    }
+    void StartTask(unsigned long tid,
+		   const std::string &oid,
+		   const std::string &mode,
+		   const std::string &tier,
+		   boost::function<void ()> task) {
+      boost::mutex::scoped_lock l(lock_);
+      unsigned long now = GetCurrentTime();
+      assert(task_table_.count(tid) == 0);
+      TaskInfo t = {oid, mode, tier, task, now};
+      task_table_[tid] = t;
+    }
+    bool FinishTask(unsigned long tid) {
+      boost::mutex::scoped_lock l(lock_);
+      unsigned long now = GetCurrentTime();
+      if (task_table_.count(tid) == 1) {
+	TaskInfo t = task_table_[tid];
+	if (trace_.is_open()) {
+	  trace_ << t.oid << "," << t.mode << "," << t.tier << ",s," << t.start << std::endl;
+	  trace_ << t.oid << "," << t.mode << "," << t.tier << ",f," << t.start << std::endl;
+	}
+	task_table_.erase(tid);
+	return true;
+      } else {
+	return false;
+      }
+    }
+    void WatchTasks() {
+      while (true) {
+	unsigned long now = GetCurrentTime();
+	std::multiset<unsigned long> latencies;
+	{
+	  boost::mutex::scoped_lock l(lock_);
+	  std::map<unsigned long, TaskInfo>::iterator it;
+	  for (it = task_table_.begin(); it != task_table_.end(); it++) {
+	    TaskInfo t = it->second;
+	    latencies.insert(now - t.start);
+	  }
+	}
+	int index = 0;
+	unsigned long median;
+	std::vector<unsigned long> l;
+	std::multiset<unsigned long>::reverse_iterator rit = latencies.rbegin();
+	while (rit != latencies.rend()) {
+	  if (index < 5) {
+	    l.push_back(*rit);
+	  }
+	  if (index == 5) {
+	    median = *rit;
+	    break;
+	  }
+	  rit++;
+	  index++;
+	}
+	if (l.size() == 5) {
+	  std::cout << "latencies [s] ";
+	  std::cout << "median = ";
+	  std::cout << std::setw(4) << std::right << median/1000 << " ";
+	  std::cout << "max = [" ;
+	  std::cout << std::setw(4) << std::right << l[0]/1000 << " ";
+	  std::cout << std::setw(4) << std::right << l[1]/1000 << " ";
+	  std::cout << std::setw(4) << std::right << l[2]/1000 << " ";
+	  std::cout << std::setw(4) << std::right << l[3]/1000 << " ";
+	  std::cout << std::setw(4) << std::right << l[4]/1000 << " ";
+	  std::cout << "]" << std::endl;
+	}
+	if (flag_) {
+	  return;
+	}
+	sleep(1);
+      }
+    }
+    unsigned long GetTid() {
+      boost::mutex::scoped_lock l(lock_);
+      unsigned long tid = tid_counter_;
+      tid_counter_++;
+      return tid;
+    }
+    void End() {
+      flag_ = true;
+    }
+  private:
+    boost::mutex lock_;
+    unsigned long tid_counter_;
+    std::map<unsigned long, TaskInfo> task_table_;
+    std::ofstream trace_;
+    bool flag_;
+  };
   /**
    *
    */
   SessionPool* session_pool_;
+  /**
+   *
+   */
+  TaskManager* task_manager_;
   /**
    * Lock advisory lock
    *
