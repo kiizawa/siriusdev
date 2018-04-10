@@ -1,3 +1,3 @@
 #!/bin/sh
 
-sudo singularity ssd hdd
+sudo singularity instance.stop ssd hdd
