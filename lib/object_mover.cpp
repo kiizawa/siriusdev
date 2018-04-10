@@ -228,7 +228,7 @@ void Session::Reconnect() {
 int Session::AioOperate(Tier tier, const std::string& oid, librados::ObjectWriteOperation *op, int flags) {
   int r;
   librados::AioCompletion *completion = cluster_.aio_create_completion();
-  session_pool_->Notify(this);
+  // session_pool_->Notify(this);
   switch (tier) {
   case CACHE:
     r = io_ctx_cache_.aio_operate(oid, completion, op, flags);
@@ -256,7 +256,7 @@ ObjectMover::ObjectMover(const std::string &ceph_conf_file, int thread_pool_size
     boost::thread* t = thr_grp_.create_thread(boost::bind(&boost::asio::io_service::run, &ios_));
     session_pool_->ReserveSession(t->get_id());
   }
-  thr_grp_.create_thread(boost::bind(&SessionPool::WatchSessions, session_pool_));
+  thr_grp_.create_thread(boost::bind(&TaskManager::WatchTasks, task_manager_));
   if (!trace_filename.empty()) {
     trace_.open(trace_filename);
   }
