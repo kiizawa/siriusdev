@@ -256,11 +256,11 @@ ObjectMover::ObjectMover(const std::string &ceph_conf_file, int thread_pool_size
     boost::thread* t = thr_grp_.create_thread(boost::bind(&boost::asio::io_service::run, &ios_));
     session_pool_->ReserveSession(t->get_id());
   }
+  task_manager_ = new TaskManager(trace_filename);
   thr_grp_.create_thread(boost::bind(&TaskManager::WatchTasks, task_manager_));
   if (!trace_filename.empty()) {
     trace_.open(trace_filename);
   }
-  task_manager_ = new TaskManager(trace_filename);
 }
 
 ObjectMover::~ObjectMover() {
