@@ -129,19 +129,6 @@ ObjectMover::~ObjectMover() {
   // thr_grp_.join_all();
   delete task_manager_;
   delete session_pool_;
-#ifdef SHOW_STATS
-  printf("stats (Create)\n");
-  stats_create.ShowStats();
-  printf("stats (Read from HDD)\n");
-  stats_read_hdd.ShowStats();
-  printf("stats (Move)\n");
-  stats_move.ShowStats();
-  printf("stats (Read from SSD)\n");
-  stats_read_ssd.ShowStats();
-#endif /* SHOW_STATS */
-#ifdef DEBUG
-  output_file.close();
-#endif /* DEBUG */
   if (trace_.is_open()) {
     trace_.close();
   }
