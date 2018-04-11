@@ -43,7 +43,7 @@ get_server_ip_addr () {
 function start() {
 
     CEPH_DIR_LOGICAL=/tmp/ceph
-    CEPH_DIR_PHYSICAL=/tmp/ceph.$HOST_NAME
+    CEPH_DIR_PHYSICAL=$CEPH_DIR_LOGICAL.$HOST_NAME
     if [ ! -e "$CEPH_DIR_PHYSICAL" ]
     then
 	mkdir $CEPH_DIR_PHYSICAL
