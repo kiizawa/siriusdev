@@ -14,6 +14,12 @@ then
       exit
 fi
 
+if [ -n "$NEED_XATTR" -a $NEED_XATTR = 1 ]
+then
+   fuse_xattrs $CEPH_DIR /tmp/with_xattr/ceph
+   CEPH_DIR=/tmp/with_xattr/ceph
+fi
+
 CEPH_CONF=$CEPH_CONF_DIR/ceph.conf
 CEPH_BIN_DIR=/usr/local/bin
 CEPH_LIB_DIR=/usr/local/lib
@@ -155,6 +161,29 @@ then
     then
 	OSD_JOURNAL=$OSD_DATA_DIR"/journal"
     fi
+
+    set +e
+    # check if the underlying filesystem supports fallocate
+    fallocate -l 1k $OSD_JOURNAL
+    if [ $? != 0 ]
+    then
+	NEED_MANUAL_PREALLOCATE=true
+    else
+	NEED_MANUAL_PREALLOCATE=false
+    fi
+    rm -f $OSD_JOURNAL
+
+    # check if the underlying filesystem supports direct I/O
+    dd if=/dev/zero of=$OSD_JOURNAL oflag=direct bs=1k count=1
+    if [ $? != 0 ]
+    then
+	JOURNAL_DIO=false
+    else
+	JOURNAL_DIO=true
+    fi
+    rm -f $OSD_JOURNAL
+    set -e
+
     osd_num=`$CEPH_BIN_DIR/ceph osd create $CONF_ARGS`
 
     set +e
@@ -188,6 +217,7 @@ then
 osd data = $OSD_DATA_DIR
 osd journal = $OSD_JOURNAL
 osd op threads = $OP_THREADS
+journal dio = $JOURNAL_DIO
 # needed to use ext4
 osd max object name len = 256
 osd max object namespace len = 64
@@ -267,8 +297,10 @@ EOF
     # initialize journal
 
     rm -f $OSD_JOURNAL
-    # needed to use ext3
-    dd if=/dev/zero of=$OSD_JOURNAL bs=1M count=1K
+    if [ $NEED_MANUAL_PREALLOCATE = true ]
+    then
+	dd if=/dev/zero of=$OSD_JOURNAL bs=1M count=1K	
+    fi
 
     KEY_ARGS="--keyring $CEPH_CONF_DIR/keyring"
 
