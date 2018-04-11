@@ -42,7 +42,7 @@ void read(const std::string trace_filename, int thread_num, const std::string &o
    * Operations on obejcts can be executed asynchronously by background threads.
    * thread_num controls the parallelism.
    */
-  ObjectMover om(thread_num, trace_filename);
+  ObjectMover om("/tmp/share/ceph.conf", thread_num, trace_filename);
   
   /* Load object list */
 
@@ -140,7 +140,7 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
    * Operations on obejcts can be executed asynchronously by background threads.
    * thread_num controls the parallelism.
    */
-  ObjectMover om(thread_num, trace_filename);
+  ObjectMover om("/tmp/share/ceph.conf", thread_num, trace_filename);
 
   /* Load object list */
 
@@ -263,7 +263,7 @@ void move(const std::string &trace_filename, ObjectMover::Tier tier, int thread_
    * Operations on obejcts can be executed asynchronously by background threads.
    * thread_num controls the parallelism.
    */
-  ObjectMover om(thread_num, trace_filename);
+  ObjectMover om("/tmp/share/ceph.conf", thread_num, trace_filename);
 
   /* Load object list */
 

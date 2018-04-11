@@ -29,7 +29,7 @@ void read(const std::string trace_filename, int thread_num, int object_num) {
    * Operations on obejcts can be executed asynchronously by background threads.
    * thread_num controls the parallelism.
    */
-  ObjectMover om(thread_num, trace_filename);
+  ObjectMover om("/tmp/share/ceph.conf", thread_num, trace_filename);
   
   /* Read objects from Slow Tier (HDD) */
 
@@ -102,7 +102,7 @@ void write(const std::string &trace_filename, ObjectMover::Tier tier, int thread
    * Operations on obejcts can be executed asynchronously by background threads.
    * thread_num controls the parallelism.
    */
-  ObjectMover om(thread_num, trace_filename);
+  ObjectMover om("/tmp/share/ceph.conf", thread_num, trace_filename);
 
   /* Create objects in Slow Tier (HDD) */
 
@@ -177,7 +177,7 @@ void move(const std::string &trace_filename, ObjectMover::Tier tier, int thread_
    * Operations on obejcts can be executed asynchronously by background threads.
    * thread_num controls the parallelism.
    */
-  ObjectMover om(thread_num, trace_filename);
+  ObjectMover om("/tmp/share/ceph.conf", thread_num, trace_filename);
 
   /* Move objects into Fast Tier (SSD) */
 

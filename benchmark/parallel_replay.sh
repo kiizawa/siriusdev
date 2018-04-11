@@ -3,10 +3,10 @@
 set -ex
 
 READ_PATTERN="p1"
-CLIENT_IDS="0 1"
+CLIENT_IDS="0"
 THREAD_NUM=16
 NUM_CLIENTS=`echo $CLIENT_IDS | wc -w`
-NUM_NODES=4
+NUM_NODES=2
 
 METHOD=pool
 HDD_TIER=s
@@ -16,13 +16,13 @@ SSD_TIER=f
 #HDD_TIER=s
 #SSD_TIER=f
 
-SHARED_LIST_DIR=/share/XGC_data
+SHARED_LIST_DIR=/tmp/share/XGC_data
 
-cp ./replayer.exe /share/
+cp ./replayer.exe /tmp/share/
 
 # log
 
-SHARED_LOG_DIR=/share/log
+SHARED_LOG_DIR=/tmp/share/log
 if [ ! -e $SHARED_LOG_DIR ]
 then
     mkdir $SHARED_LOG_DIR
@@ -33,7 +33,7 @@ rm -rf $LOG_DIR; mkdir $LOG_DIR
 
 STATS=$LOG_DIR/stats.all
 
-SYNC_FILE=/share/done
+SYNC_FILE=/tmp/share/done
 rm -rf $SYNC_FILE
 
 # write (hdd)
@@ -64,7 +64,7 @@ do
     fi
     W_LIST=$SHARED_LIST_DIR/writer_list/writer_list.$i
     W_LOG=$LOG_DIR/wh.log.${i}
-    ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $W_LIST; echo $i >> $SYNC_FILE"
+    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $W_LIST; echo $i >> $SYNC_FILE"
 done
 
 set +ex
@@ -121,7 +121,7 @@ do
     fi
     R_LIST=$SHARED_LIST_DIR/reader_${READ_PATTERN}_list/reader_${READ_PATTERN}_list.$i
     R_LOG=$LOG_DIR/rh.log.${i}
-    ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
+    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
 
 set +ex
@@ -176,7 +176,7 @@ do
     fi
     R_LIST=$SHARED_LIST_DIR/reader_${READ_PATTERN}_list/reader_${READ_PATTERN}_list.$i
     M_LOG=$LOG_DIR/ms.log.${i}
-    ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m m -r $SSD_TIER -f $M_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
+    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m m -r $SSD_TIER -f $M_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
 
 set +ex
@@ -231,7 +231,7 @@ do
     fi
     R_LIST=$SHARED_LIST_DIR/reader_${READ_PATTERN}_list/reader_${READ_PATTERN}_list.$i
     R_LOG=$LOG_DIR/rs.log.${i}
-    ssh -f $NODE "ulimit -n 4096; /share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
+    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
 
 set +e
