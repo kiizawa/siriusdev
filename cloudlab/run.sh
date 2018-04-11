@@ -5,7 +5,7 @@ set -ex
 # Generall Settings
 
 export MASTER_NODE="node-0"
-export SLAVE_NODES="node-1 node-2 node-3 node-4 node-5"
+export SLAVE_NODES="node-1 node-2"
 ALL_NODES=$MASTER_NODE" "$SLAVE_NODES
 export ALL_NODES
 

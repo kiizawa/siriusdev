@@ -4,7 +4,7 @@
 
 set -ex
 
-DOCKER_IMAGE=kiizawa/siriusdev
+DOCKER_IMAGE=kiizawa/siriusdev:memstore_journal_monip
 
 need_to_install=0
 for NODE in $ALL_NODES

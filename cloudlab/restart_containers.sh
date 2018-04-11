@@ -2,8 +2,8 @@
 
 set -x
 
-CLIENTS="node-0 node-1"
-SERVERS="node-2 node-3 node-4 node-5"
+CLIENTS="node-0"
+SERVERS="node-1 node-2"
 ALL_NODES=$CLIENTS" "$SERVERS
 
 for NODE in $ALL_NODES
@@ -14,8 +14,8 @@ done
 
 for NODE in $ALL_NODES
 do
-    scp create_container.sh $NODE:/tmp
-    ssh $NODE sh -c "/tmp/create_container.sh"
-    #scp create_container_pool_based.sh $NODE:/tmp
-    #ssh $NODE sh -c "/tmp/create_container_pool_based.sh"
+    #scp create_container.sh $NODE:/tmp
+    #ssh $NODE sh -c "/tmp/create_container.sh"
+    scp create_container_pool_based.sh $NODE:/tmp
+    ssh $NODE sh -c "/tmp/create_container_pool_based.sh"
 done
