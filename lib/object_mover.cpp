@@ -125,9 +125,9 @@ ObjectMover::ObjectMover(const std::string &ceph_conf_file, int thread_pool_size
 
 ObjectMover::~ObjectMover() {
   task_manager_->End();
-  delete task_manager_;
   delete w_;
   thr_grp_.join_all();
+  delete task_manager_;
   delete session_pool_;
 #ifdef SHOW_STATS
   printf("stats (Create)\n");
