@@ -264,8 +264,8 @@ ObjectMover::ObjectMover(const std::string &ceph_conf_file, int thread_pool_size
 }
 
 ObjectMover::~ObjectMover() {
+  task_manager_->End();
   delete task_manager_;
-  session_pool_->End();
   delete w_;
   thr_grp_.join_all();
   delete session_pool_;
