@@ -11,7 +11,8 @@ RUN echo "export LD_LIBRARY_PATH=/usr/local/lib" >> ~/.bashrc
 # install packages
 
 RUN apt -y update && \
-    apt -y install emacs \
+    apt -y install libboost-all-dev \
+                   emacs \
                    g++ \
                    git \
                    net-tools \

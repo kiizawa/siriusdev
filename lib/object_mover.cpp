@@ -1,146 +1,6 @@
 #include <rados/librados.hpp>
 #include "object_mover.hpp"
 
-//#define DEBUG
-//#define SHOW_STATS
-
-#ifdef DEBUG
-#include <iostream>
-#include <fstream>
-std::ofstream output_file("/dev/shm/log.txt");
-boost::mutex debug_lock;
-#endif /* DEBUG */
-
-#ifdef SHOW_STATS
-
-#include <sys/time.h>
-#include <set>
-#include <vector>
-
-class Stats {
-public:
-  Stats() {}
-  ~Stats() { }
-  void Insert(int t) {
-    boost::mutex::scoped_lock l(m_);
-    latencies_.push_back(t);
-  }
-  void ShowStats() {
-    std::multiset<int> s;
-    std::vector<int>::const_iterator it;
-    for (it = latencies_.begin(); it != latencies_.end(); it++) {
-      s.insert(*it);
-    }
-    std::multiset<int>::const_iterator it2;
-    int total = s.size();
-    int latency_sum = 0;
-    printf("total=%d\n", total);
-    int count = 0;
-    bool done_25th, done_50th, done_75th = false;
-    for (it2 = s.begin(); it2 != s.end(); it2++) {
-      count++;
-      latency_sum += *it2;
-      if (done_25th == false && count > 0.25 * total) {
-	printf("25th percentile=%5d\n", *it2);
-	done_25th = true;
-      } else if (done_50th == false && count > 0.5 * total) {
-	printf("50th percentile=%5d\n", *it2);
-	done_50th = true;
-      } else if (done_75th == false && count > 0.75 * total) {
-	printf("75th percentile=%5d\n", *it2);
-	done_75th = true;
-      }
-    }
-    printf("average        =%5d\n", latency_sum/total);
-  }
-private:
-  boost::mutex m_;
-  std::vector<int> latencies_;
-};
-
-
-class Timer {
-public:
-  Timer(Stats *stats, std::string prefix = "") : stats_(stats), prefix_(prefix)  {
-    ::gettimeofday(&start_, NULL);
-#ifdef DEBUG
-    const long s = start_.tv_sec;
-    struct tm* time_info = ::localtime(&s);
-    {
-      boost::mutex::scoped_lock l(debug_lock);
-      output_file << prefix_ << " start  " << asctime(time_info);
-    }
-#endif /* DEBUG */
-  }
-  ~Timer() {
-    ::gettimeofday(&finish_, NULL);
-    int latency_in_msec =
-      (1000*finish_.tv_sec + finish_.tv_usec/1000) - (1000*start_.tv_sec + start_.tv_usec/1000);
-    stats_->Insert(latency_in_msec);
-#ifdef DEBUG
-    const long s = finish_.tv_sec;
-    struct tm* time_info = ::localtime(&s);
-    {
-      boost::mutex::scoped_lock l(debug_lock);
-      output_file << prefix_ << " finish " << asctime(time_info);
-    }
-    if (latency_in_msec >= 10000) {
-      output_file << "warning: " << prefix_ << " took " << latency_in_msec << " [ms]" << std::endl;
-    }
-#endif /* DEBUG */
-  }
-private:
-  std::string prefix_;
-  struct timeval start_, finish_;
-  Stats *stats_;
-};
-
-Stats stats_create;
-Stats stats_move;
-Stats stats_read_hdd;
-Stats stats_read_ssd;
-
-#endif /* SHOW_STATS */
-
-class Timer2 {
-public:
-  Timer2(std::ofstream *ofs, boost::mutex *lock,
-	 const std::string &oid, const std::string &mode, const std::string &tier)
-    : ofs_(ofs), lock_(lock), oid_(oid), mode_(mode), tier_(tier) {
-    struct timeval start;
-    ::gettimeofday(&start, NULL);
-    unsigned long start_msec = 1000*start.tv_sec + start.tv_usec/1000;
-    if (ofs_->is_open()) {
-      boost::mutex::scoped_lock l(*lock_);
-      *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",s," << start_msec << std::endl;
-    }
-#if 1
-    start_msec_ = start_msec;
-#endif
-  }
-  ~Timer2() {
-    struct timeval finish;
-    ::gettimeofday(&finish, NULL);
-    unsigned long finish_msec = 1000*finish.tv_sec + finish.tv_usec/1000;
-    if (ofs_->is_open()) {
-      boost::mutex::scoped_lock l(*lock_);
-      *ofs_ << oid_ << "," << mode_ << "," << tier_ << ",f," << finish_msec << std::endl;
-    }
-    if (finish_msec - start_msec_ > 10000 && mode_ == "x") {
-      std::cout << "BUG!" << std::endl;
-    }
-  }
-private:
-  std::ofstream *ofs_;
-  boost::mutex *lock_;
-  std::string oid_;
-  std::string mode_;
-  std::string tier_;
-#if 1
-  unsigned long start_msec_;
-#endif
-};
-
 Session::Session(SessionPool* session_pool, const std::string &ceph_conf_file) : session_pool_(session_pool), ceph_conf_file_(ceph_conf_file) {
   Connect();
 }
@@ -256,7 +116,7 @@ ObjectMover::ObjectMover(const std::string &ceph_conf_file, int thread_pool_size
     boost::thread* t = thr_grp_.create_thread(boost::bind(&boost::asio::io_service::run, &ios_));
     session_pool_->ReserveSession(t->get_id());
   }
-  task_manager_ = new TaskManager(trace_filename);
+  task_manager_ = new TaskManager(trace_filename, this);
   thr_grp_.create_thread(boost::bind(&TaskManager::WatchTasks, task_manager_));
   if (!trace_filename.empty()) {
     trace_.open(trace_filename);
@@ -264,31 +124,17 @@ ObjectMover::ObjectMover(const std::string &ceph_conf_file, int thread_pool_size
 }
 
 ObjectMover::~ObjectMover() {
-  delete task_manager_;
-  session_pool_->End();
+  task_manager_->End();
   delete w_;
-  thr_grp_.join_all();
+  // thr_grp_.join_all();
+  delete task_manager_;
   delete session_pool_;
-#ifdef SHOW_STATS
-  printf("stats (Create)\n");
-  stats_create.ShowStats();
-  printf("stats (Read from HDD)\n");
-  stats_read_hdd.ShowStats();
-  printf("stats (Move)\n");
-  stats_move.ShowStats();
-  printf("stats (Read from SSD)\n");
-  stats_read_ssd.ShowStats();
-#endif /* SHOW_STATS */
-#ifdef DEBUG
-  output_file.close();
-#endif /* DEBUG */
   if (trace_.is_open()) {
     trace_.close();
   }
 }
 
 void ObjectMover::Create(Tier tier, const std::string &object_name, const librados::bufferlist &bl, int *err, unsigned long tid) {
-  //Timer2 t(&trace_, &lock_, object_name, "w", TierToString(tier));
   int r;
 #ifdef USE_MICRO_TIERING
   switch(tier) {
@@ -480,7 +326,6 @@ void ObjectMover::CRead(const std::string &object_name, char *buf, size_t len, i
 }
 
 void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err, unsigned long tid) {
-  //Timer2 t(&trace_, &lock_, object_name, "r", "-");
   int r;
   Session *s = session_pool_->GetSession(boost::this_thread::get_id());
 #ifdef USE_MICRO_TIERING
@@ -494,7 +339,6 @@ void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl,
 }
 
 void ObjectMover::Move(Tier tier, const std::string &object_name, int *err, unsigned long tid) {
-  //Timer2 t(&trace_, &lock_, object_name, "m", TierToString(tier));
   int r = 0;
 #ifdef USE_MICRO_TIERING
   switch(tier) {

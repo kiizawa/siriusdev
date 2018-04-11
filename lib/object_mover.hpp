@@ -10,7 +10,6 @@
 #include <rados/librados.hpp>
 
 //#define USE_MICRO_TIERING
-//#define DEBUG
 
 class SessionPool;
 
@@ -37,22 +36,12 @@ private:
 
 class SessionPool {
 public:
-  SessionPool(const std::string &ceph_conf_file, int session_pool_size) : flag_(false) {
+  SessionPool(const std::string &ceph_conf_file, int session_pool_size) {
     for (int i = 0; i < session_pool_size; i++) {
       pool_.insert(std::make_pair(new Session(this, ceph_conf_file), true));
     }
   }
   ~SessionPool() {
-#if 0
-    std::multiset<int> counts;
-    for (std::map<Session*, bool>::iterator it = pool_.begin(); it != pool_.end(); it++) {
-      counts.insert(it->first->debug_count_);
-    }
-    std::multiset<int>::iterator it;
-    for (it = counts.begin(); it != counts.end(); it++) {
-      std::cout << "count " << *it << std::endl;
-    }
-#endif
     for (std::map<Session*, bool>::iterator it = pool_.begin(); it != pool_.end(); it++) {
       delete it->first;
     }
@@ -72,69 +61,10 @@ public:
     boost::mutex::scoped_lock l(lock_);
     return reserve_map_[id];
   }
-  void Notify(Session* session) {
-    boost::mutex::scoped_lock l(lock_);
-    struct timeval tv;
-    ::gettimeofday(&tv, NULL);
-    debug_last_used_[session] = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-  }
-  void WatchSessions() {
-    while (true) {
-      struct timeval tv;
-      ::gettimeofday(&tv, NULL);
-      unsigned long now = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-      std::multiset<unsigned long> latencies;
-      {
-	boost::mutex::scoped_lock l(lock_);
-	std::map<Session*, unsigned long>::const_iterator it;
-	for (it = debug_last_used_.begin(); it != debug_last_used_.end(); it++) {
-	  latencies.insert(now - it->second);
-	}
-      }
-      int index = 0;
-      unsigned long median;
-      std::vector<unsigned long> l;
-      std::multiset<unsigned long>::reverse_iterator rit = latencies.rbegin();
-      while (rit != latencies.rend()) {
-	if (index < 5) {
-	  l.push_back(*rit);
-	}
-	if (index == 5) {
-	  median = *rit;
-	  break;
-	}
-	rit++;
-	index++;
-      }
-#if 0
-      if (l.size() == 5) {
-	std::cout << "latencies [s] ";
-	std::cout << "median = ";
-	std::cout << std::setw(4) << std::right << median/1000 << " ";
-	std::cout << "max = [" ;
-	std::cout << std::setw(4) << std::right << l[0]/1000 << " ";
-	std::cout << std::setw(4) << std::right << l[1]/1000 << " ";
-	std::cout << std::setw(4) << std::right << l[2]/1000 << " ";
-	std::cout << std::setw(4) << std::right << l[3]/1000 << " ";
-	std::cout << std::setw(4) << std::right << l[4]/1000 << " ";
-	std::cout << "]" << std::endl;
-      }
-#endif
-      if (flag_) {
-	return;
-      }
-      sleep(1);
-    }
-  }
-  void End() {
-    flag_ = true;
-  }
 private:
   boost::mutex lock_;
   std::map<Session*, bool> pool_;
-  std::map<Session*, unsigned long> debug_last_used_;
   std::map<boost::thread::id, Session*> reserve_map_;
-  bool flag_;
 };
 
 /**
@@ -239,7 +169,7 @@ private:
       boost::function<void ()> task;
       unsigned long start;
     };
-    TaskManager(const std::string &trace_filename) : tid_counter_(0), flag_(false) {
+    TaskManager(const std::string &trace_filename, ObjectMover *om) : tid_counter_(0), flag_(false), om_(om) {
       if (!trace_filename.empty()) {
 	trace_.open(trace_filename);
       }
@@ -272,7 +202,7 @@ private:
 	TaskInfo t = task_table_[tid];
 	if (trace_.is_open()) {
 	  trace_ << t.oid << "," << t.mode << "," << t.tier << ",s," << t.start << std::endl;
-	  trace_ << t.oid << "," << t.mode << "," << t.tier << ",f," << t.start << std::endl;
+	  trace_ << t.oid << "," << t.mode << "," << t.tier << ",f," << now << std::endl;
 	}
 	task_table_.erase(tid);
 	return true;
@@ -290,6 +220,12 @@ private:
 	  for (it = task_table_.begin(); it != task_table_.end(); it++) {
 	    TaskInfo t = it->second;
 	    latencies.insert(now - t.start);
+	    if (now - t.start > 10*1000) {
+	      // retry
+	      t.start = now;
+	      it->second = t;
+	      om_->ios_.post(t.task);
+	    }
 	  }
 	}
 	int index = 0;
@@ -339,6 +275,7 @@ private:
     unsigned long tid_counter_;
     std::map<unsigned long, TaskInfo> task_table_;
     std::ofstream trace_;
+    ObjectMover *om_;
     bool flag_;
   };
   /**
