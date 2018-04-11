@@ -2,12 +2,13 @@
 
 set -x
 
-NUM_SSD=4
-NUM_HDD=2
-NUM_TD=1
+NUM_SSD=1
+NUM_HDD=1
+#NUM_TD=1
 
-LOCK_FILE=/tmp/share/lock
-ROLES_FILE=/tmp/share/roles
+SHARE_DIR=/tmp/share
+LOCK_FILE=$SHARE_DIR/lock
+ROLES_FILE=$SHARE_DIR/roles
 
 is_mon()
 {
@@ -15,7 +16,7 @@ is_mon()
     if [ -z $MON_RUNNING ]
     then
 	echo 1
-	echo mon >> $ROLES_FILE
+	echo mon" "`hostname -i` >> $ROLES_FILE
     else
 	echo 0
     fi
@@ -27,7 +28,7 @@ get_pool()
     if [ $NS -lt $NUM_SSD ]
     then
 	echo cache_pool
-	echo ssd >> $ROLES_FILE
+	echo ssd" "`hostname -i` >> $ROLES_FILE
 	return
     fi
 
@@ -35,17 +36,17 @@ get_pool()
     if [ $NH -lt $NUM_HDD ]
     then
 	echo storage_pool
-	echo hdd >> $ROLES_FILE
+	echo hdd" "`hostname -i` >> $ROLES_FILE
 	return
     fi
 
-    NT=`cat $ROLES_FILE | grep td | wc -l`
-    if [ $NT -lt $NUM_TD ]
-    then
-	echo td
-	echo td >> $ROLES_FILE
-	return
-    fi
+    #NT=`cat $ROLES_FILE | grep td | wc -l`
+    #if [ $NT -lt $NUM_TD ]
+    #then
+	#echo archive_pool
+	#echo td"  "`hostname -i` >> $ROLES_FILE
+	#return
+    #fi
 }
 
 wait()
