@@ -202,7 +202,7 @@ private:
 	TaskInfo t = task_table_[tid];
 	if (trace_.is_open()) {
 	  trace_ << t.oid << "," << t.mode << "," << t.tier << ",s," << t.start << std::endl;
-	  trace_ << t.oid << "," << t.mode << "," << t.tier << ",f," << t.start << std::endl;
+	  trace_ << t.oid << "," << t.mode << "," << t.tier << ",f," << now << std::endl;
 	}
 	task_table_.erase(tid);
 	return true;
