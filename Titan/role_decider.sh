@@ -13,7 +13,7 @@ ROLES_FILE=$SHARE_DIR/roles
 is_mon()
 {
     MON_RUNNING=`cat $ROLES_FILE | grep mon`
-    if [ -z $MON_RUNNING ]
+    if [ -z "$MON_RUNNING" ]
     then
 	echo 1
 	echo mon" "`hostname -i` >> $ROLES_FILE
@@ -79,4 +79,4 @@ fi
 RUN_MON=`is_mon`
 POOL=`get_pool`
 
-rm lock
+rm $LOCK_FILE
