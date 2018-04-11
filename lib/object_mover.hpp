@@ -169,7 +169,7 @@ private:
       boost::function<void ()> task;
       unsigned long start;
     };
-    TaskManager(const std::string &trace_filename) : tid_counter_(0), flag_(false) {
+    TaskManager(const std::string &trace_filename, ObjectMover *om) : tid_counter_(0), flag_(false), om_(om) {
       if (!trace_filename.empty()) {
 	trace_.open(trace_filename);
       }
@@ -220,6 +220,12 @@ private:
 	  for (it = task_table_.begin(); it != task_table_.end(); it++) {
 	    TaskInfo t = it->second;
 	    latencies.insert(now - t.start);
+	    if (now - t.start > 10*1000) {
+	      // retry
+	      t.start = now;
+	      it->second = t;
+	      om_->ios_.post(t.task);
+	    }
 	  }
 	}
 	int index = 0;
@@ -269,6 +275,7 @@ private:
     unsigned long tid_counter_;
     std::map<unsigned long, TaskInfo> task_table_;
     std::ofstream trace_;
+    ObjectMover *om_;
     bool flag_;
   };
   /**
