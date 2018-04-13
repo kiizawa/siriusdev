@@ -9,6 +9,7 @@ NUM_HDD=1
 SHARE_DIR=/tmp/share
 LOCK_FILE=$SHARE_DIR/lock
 ROLES_FILE=$SHARE_DIR/roles
+IP_ADDR_FILE=$SHARE_DIR/ip_addr
 
 is_mon()
 {
@@ -49,6 +50,13 @@ get_pool()
     #fi
 }
 
+get_ip_addr()
+{
+    IP_ADDR=`cat $IP_ADDR_FILE`
+    echo `expr $IP_ADDR + 1` > $IP_ADDR_FILE
+    echo "192.168.0."$IP_ADDR
+}
+
 wait()
 {
     while true
@@ -76,7 +84,9 @@ then
     touch $ROLES_FILE
 fi
 
-RUN_MON=`is_mon`
-POOL=`get_pool`
+if [ ! -e $IP_ADDR_FILE ]
+then
+    echo "10" > $IP_ADDR_FILE
+fi
 
-rm $LOCK_FILE
+rm -f $LOCK_FILE
