@@ -14,7 +14,7 @@ NEED_XATTR_SSD=1
 CEPH_DIR_HDD=/tmp/share/ceph
 NEED_XATTR_HDD=1
 
-CEPH_NET=CEPH_NET=172.18.0.0/23
+CEPH_NET=CEPH_NET=128.104.222.0/23
 
 OSD_NUM_PER_POOL=1
 
@@ -48,6 +48,12 @@ function start() {
 	sudo rm -rf $CEPH_DIR_PHYSICAL/*
     fi
 
+    if [ -n "$RUN_MON" -a $RUN_MON = 1 ]
+    then
+	CEPH_NET_PREFIX=`echo $CEPH_NET | cut -d . -f 1-2`
+	MON_ADDR=ip addr show | grep "inet " | sed -e 's/^[ ]*//g' | cut -d ' ' -f 2 | cut -d '/' -f 1 | grep $CEPH_NET_PREFIX
+    fi
+
     singularity instance.start \
 	--writable \
         -H $DUMMY_HOME_DIR \
@@ -63,6 +69,7 @@ function start() {
     SINGULARITYENV_OSD_TYPE=$OSD_TYPE \
     SINGULARITYENV_POOL=$POOL \
     SINGULARITYENV_CEPH_PUBLIC_NETWORK=$CEPH_NET \
+    SINGULARITYENV_MON_ADDR=$MON_ADDR \
     SINGULARITYENV_POOL_SIZE=1 \
     SINGULARITYENV_PG_NUM=$PG_NUM \
     SINGULARITYENV_OP_THREADS=32 \
