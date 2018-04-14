@@ -16,8 +16,10 @@ fi
 
 if [ -n "$NEED_XATTR" -a $NEED_XATTR = 1 ]
 then
-   fuse_xattrs $CEPH_DIR /tmp/with_xattr/ceph
-   CEPH_DIR=/tmp/with_xattr/ceph
+    NEW_CEPH_DIR=/ceph_dir_with_xattr
+    mkdir $NEW_CEPH_DIR
+    fuse_xattrs $CEPH_DIR $NEW_CEPH_DIR
+    CEPH_DIR=$NEW_CEPH_DIR
 fi
 
 CEPH_CONF=$CEPH_CONF_DIR/ceph.conf
