@@ -30,6 +30,8 @@ export LD_LIBRARY_PATH=$CEPH_LIB_DIR
 
 CONF_ARGS="--conf $CEPH_CONF"
 
+HOSTNAME=`hostname`
+
 #########
 ## MON ##
 #########
