@@ -324,6 +324,13 @@ fi
 
 service ssh start
 
+# exit (needed for running on Singularity)
+
+if [ -n "$EXIT_AFTER_START" -a $EXIT_AFTER_START = 1 ]
+then
+    exit
+fi
+
 while true
 do 
     sleep 3600

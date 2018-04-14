@@ -14,7 +14,7 @@ NEED_XATTR_SSD=1
 CEPH_DIR_HDD=/tmp/share/ceph
 NEED_XATTR_HDD=1
 
-CEPH_NET=128.104.222.0/23
+CEPH_NET=10.10.1.0/24
 
 OSD_NUM_PER_POOL=1
 
@@ -74,6 +74,7 @@ function start() {
     SINGULARITYENV_POOL_SIZE=1 \
     SINGULARITYENV_PG_NUM=$PG_NUM \
     SINGULARITYENV_OP_THREADS=32 \
+    SINGULARITYENV_EXIT_AFTER_START=1 \
         singularity run --writable instance://siriusdev /root/start_ceph.sh
 
     singularity exec instance://siriusdev \
