@@ -61,6 +61,10 @@ RUN ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ''
 RUN cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 RUN chmod 600 /root/.ssh/authorized_keys
 
+# Create Ceph directories (needed for running on Singularity)
+
+RUN mkdir /ceph_conf && mkdir /ceph
+
 EXPOSE 22
 
 CMD ["/root/start_ceph.sh"]
