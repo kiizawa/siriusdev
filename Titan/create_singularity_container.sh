@@ -51,7 +51,7 @@ function start() {
     if [ -n "$RUN_MON" -a $RUN_MON = 1 ]
     then
 	CEPH_NET_PREFIX=`echo $CEPH_NET | cut -d . -f 1-2`
-	MON_ADDR=ip addr show | grep "inet " | sed -e 's/^[ ]*//g' | cut -d ' ' -f 2 | cut -d '/' -f 1 | grep $CEPH_NET_PREFIX
+	MON_ADDR=`ip addr show | grep "inet " | sed -e 's/^[ ]*//g' | cut -d ' ' -f 2 | cut -d '/' -f 1 | grep $CEPH_NET_PREFIX`
     fi
 
     singularity instance.start \
