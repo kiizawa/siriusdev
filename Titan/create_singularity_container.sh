@@ -25,7 +25,7 @@ function start() {
     DUMMY_HOME_DIR=/tmp/kiizawa
     if [ ! -e $DUMMY_HOME_DIR ]
     then
-	mkdir $DUMMY_HOME_DIR
+	sudo mkdir $DUMMY_HOME_DIR
     fi
 
     if [ $POOL = "cache_pool" ]
@@ -54,13 +54,14 @@ function start() {
 	MON_ADDR=`ip addr show | grep "inet " | sed -e 's/^[ ]*//g' | cut -d ' ' -f 2 | cut -d '/' -f 1 | grep $CEPH_NET_PREFIX`
     fi
 
-    singularity instance.start \
+    sudo singularity instance.start \
 	--writable \
         -H $DUMMY_HOME_DIR \
 	-B $CEPH_CONF_DIR:/ceph_conf \
 	-B $CEPH_DIR_PHYSICAL:/ceph \
 	$SINGULARITY_IMAGE siriusdev
 
+    sudo \
     SINGULARITYENV_NEED_XATTR=$NEED_XATTR \
     SINGULARITYENV_CEPH_CONF_DIR=/ceph_conf \
     SINGULARITYENV_CEPH_DIR=/ceph \
