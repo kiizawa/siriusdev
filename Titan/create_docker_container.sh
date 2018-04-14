@@ -33,7 +33,7 @@ function start() {
 	NEED_XATTR=$NEED_XATTR_HDD
     fi
 
-    CEPH_DIR_PHYSICAL=$CEPH_DIR_LOGICAL.$HOST_NAME
+    CEPH_DIR_PHYSICAL=$CEPH_DIR_LOGICAL.$CONTAINER_NAME
     if [ ! -e "$CEPH_DIR_PHYSICAL" ]
     then
 	mkdir $CEPH_DIR_PHYSICAL
@@ -42,9 +42,9 @@ function start() {
     fi
 
     docker run -it -d --privileged  \
-	--name $HOST_NAME \
+	--name $CONTAINER_NAME \
 	--net cephnet \
-	--hostname $HOST_NAME \
+	--hostname $CONTAINER_NAME \
 	--ip $HOST_ADDR \
 	-v $CEPH_CONF_DIR:$CEPH_CONF_DIR \
 	-v $CEPH_DIR_PHYSICAL:$CEPH_DIR_LOGICAL \
@@ -72,7 +72,7 @@ CONFIG_OPTS="-e POOL_SIZE=1 -e PG_NUM=$PG_NUM -e OP_THREADS=32"
 
 # servers
 
-HOST_NAME=$HOST"-docker"
+CONTAINER_NAME=$HOST"-docker"
 HOST_ADDR=`get_ip_addr`
 
 RUN_MON=`is_mon`

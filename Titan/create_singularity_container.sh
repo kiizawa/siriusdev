@@ -40,7 +40,7 @@ function start() {
 	NEED_XATTR=$NEED_XATTR_HDD
     fi
 
-    CEPH_DIR_PHYSICAL=$CEPH_DIR_LOGICAL.$HOSTNAME
+    CEPH_DIR_PHYSICAL=$CEPH_DIR_LOGICAL.$CONTAINER_NAME
     if [ ! -e "$CEPH_DIR_PHYSICAL" ]
     then
 	mkdir $CEPH_DIR_PHYSICAL
@@ -74,7 +74,6 @@ function start() {
     SINGULARITYENV_POOL_SIZE=1 \
     SINGULARITYENV_PG_NUM=$PG_NUM \
     SINGULARITYENV_OP_THREADS=32 \
-    SINGULARITYENV_HOSTNAME=$HOSTNAME \
         singularity run --writable instance://siriusdev /root/start_ceph.sh
 
     singularity exec instance://siriusdev \
@@ -93,7 +92,7 @@ PG_NUM=`power2 $PG_NUM`
 
 # servers
 
-HOSTNAME=$HOST"-singularity"
+CONTAINER_NAME=$HOST"-singularity"
 HOST_ADDR=`get_ip_addr`
 
 RUN_MON=`is_mon`
