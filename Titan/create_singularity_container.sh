@@ -76,9 +76,6 @@ function start() {
     SINGULARITYENV_OP_THREADS=32 \
     SINGULARITYENV_EXIT_AFTER_START=1 \
         singularity run --writable instance://siriusdev /root/start_ceph.sh
-
-    sudo singularity exec instance://siriusdev \
-	bash -c 'LD_LIBRARY_PATH=/usr/local/lib ceph -s -c /ceph_conf/ceph.conf'
 }
 
 power2() { echo "x=l($1)/l(2); scale=0; 2^((x+0.5)/1)" | bc -l; }

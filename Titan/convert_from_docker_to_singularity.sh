@@ -1,7 +1,7 @@
 #!/bin/sh
 
 WORK_DIR=/dev/shm
-DOCKER_IMAGE=kiizawa/siriusdev:memstore_journal_xattr_monip_dummydir4
+DOCKER_IMAGE=kiizawa/siriusdev:memstore_journal_xattr_monip_dummydir5
 SINGULARITY_IMAGE=/dev/shm/siriusdev.img
 SANDBOX_DIR=$WORK_DIR/siriusdev_sandbox_dir
 
