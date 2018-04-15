@@ -63,7 +63,23 @@ RUN chmod 600 /root/.ssh/authorized_keys
 
 # Create Ceph directories (needed for running on Singularity)
 
-RUN mkdir /ceph_conf && mkdir /ceph
+RUN mkdir /ceph_conf && \
+    mkdir /ceph
+
+# Create directories on Titan
+
+RUN mkdir -p /opt/cray && \
+    mkdir -p /var/spool/alps && \
+    mkdir -p /var/opt/cray && \
+    mkdir -p /lustre/atlas && \
+    mkdir -p /lustre/atlas1 && \
+    mkdir -p /lustre/atlas2 && \
+    mkdir -p /autofs/nccs-svm1_sw && \
+    mkdir -p /ccs/sw && \
+    mkdir -p /sw && \
+    mkdir -p /autofs/nccs-svm1_proj && \
+    mkdir -p /ccs/proj && \
+    mkdir -p /.singularity.d/env
 
 EXPOSE 22
 
