@@ -77,7 +77,7 @@ function start() {
     SINGULARITYENV_EXIT_AFTER_START=1 \
         singularity run --writable instance://siriusdev /root/start_ceph.sh
 
-    singularity exec instance://siriusdev \
+    sudo singularity exec instance://siriusdev \
 	bash -c 'LD_LIBRARY_PATH=/usr/local/lib ceph -s -c /ceph_conf/ceph.conf'
 }
 
