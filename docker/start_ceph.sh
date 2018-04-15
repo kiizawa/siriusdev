@@ -166,6 +166,9 @@ then
 	OSD_JOURNAL=$OSD_DATA_DIR"/journal"
     fi
 
+    # create osd data directory for journal test
+    rm -rf $OSD_DATA_DIR; mkdir -p $OSD_DATA_DIR
+
     set +e
     # check if the underlying filesystem supports fallocate
     fallocate -l 1k $OSD_JOURNAL
