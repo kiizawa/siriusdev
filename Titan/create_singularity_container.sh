@@ -1,51 +1,52 @@
-#!/bin/bash
+#!/bin/sh
 
 set -ex
 
 # settings
 
-SINGULARITY_IMAGE=/dev/shm/siriusdev.img
+SINGULARITY_IMAGE=/ccs/home/kiizawa/titan_official.img
 
-CEPH_CONF_DIR=/tmp/share
+CEPH_CONF_DIR=$PROJWORK/csc143/$USER/ceph/conf
 
-CEPH_DIR_SSD=/dev/shm/ceph
+CEPH_DIR_SSD=/dev/shm/$USER/ceph/data
 NEED_XATTR_SSD=1
 
-CEPH_DIR_HDD=/tmp/share/ceph
+CEPH_DIR_HDD=$PROJWORK/csc143/$USER/ceph/data
 NEED_XATTR_HDD=1
 
-CEPH_NET=10.10.1.0/24
+CEPH_NET=160.91.205.0/26
 
 OSD_NUM_PER_POOL=1
 
-source /tmp/role_decider.sh
+CEPH_SCRIPTS_DIR=$PROJWORK/csc143/$USER/ceph/scripts
+source $CEPH_SCRIPTS_DIR/role_decider.sh
 
 function start() {
 
-    DUMMY_HOME_DIR=/tmp/kiizawa
-    if [ ! -e $DUMMY_HOME_DIR ]
-    then
-	sudo mkdir $DUMMY_HOME_DIR
-    fi
+    #DUMMY_HOME_DIR=/tmp/kiizawa
+    #if [ ! -e $DUMMY_HOME_DIR ]
+    #then
+	#mkdir $DUMMY_HOME_DIR
+    #fi
 
     if [ $POOL = "cache_pool" ]
     then
-	CEPH_DIR_LOGICAL=$CEPH_DIR_SSD
+	CEPH_DIR=$CEPH_DIR_SSD
 	NEED_XATTR=$NEED_XATTR_SSD
     fi
 
     if [ $POOL = "storage_pool" ]
     then
-	CEPH_DIR_LOGICAL=$CEPH_DIR_HDD
+	CEPH_DIR=$CEPH_DIR_HDD
 	NEED_XATTR=$NEED_XATTR_HDD
     fi
 
-    CEPH_DIR_PHYSICAL=$CEPH_DIR_LOGICAL.$CONTAINER_NAME
-    if [ ! -e "$CEPH_DIR_PHYSICAL" ]
+    CEPH_DIR=$CEPH_DIR.$CONTAINER_NAME
+    if [ ! -e "$CEPH_DIR" ]
     then
-	mkdir $CEPH_DIR_PHYSICAL
+	mkdir -p $CEPH_DIR
     else
-	sudo rm -rf $CEPH_DIR_PHYSICAL/*
+	rm -rf $CEPH_DIR/*
     fi
 
     if [ -n "$RUN_MON" -a $RUN_MON = 1 ]
@@ -54,17 +55,21 @@ function start() {
 	MON_ADDR=`ip addr show | grep "inet " | sed -e 's/^[ ]*//g' | cut -d ' ' -f 2 | cut -d '/' -f 1 | grep $CEPH_NET_PREFIX`
     fi
 
-    sudo singularity instance.start \
-	--writable \
-        -H $DUMMY_HOME_DIR \
-	-B $CEPH_CONF_DIR:/ceph_conf \
-	-B $CEPH_DIR_PHYSICAL:/ceph \
-	$SINGULARITY_IMAGE siriusdev
+    #singularity instance.start \
+	#--writable \
+        #-H $DUMMY_HOME_DIR \
+	#-B $CEPH_CONF_DIR:/ceph_conf \
+	#-B $CEPH_DIR_PHYSICAL:/ceph \
+	#$SINGULARITY_IMAGE siriusdev
 
-    sudo \
+    #singularity instance.start \
+    #$SINGULARITY_IMAGE siriusdev
+    #PID=`singularity instance.list | grep siriusdev | sed -e 's/\s\+/ /g' | cut -d ' ' -f 2`
+    #ls /proc/$PID/ns
+
     SINGULARITYENV_NEED_XATTR=$NEED_XATTR \
-    SINGULARITYENV_CEPH_CONF_DIR=/ceph_conf \
-    SINGULARITYENV_CEPH_DIR=/ceph \
+    SINGULARITYENV_CEPH_CONF_DIR=$CEPH_CONF_DIR \
+    SINGULARITYENV_CEPH_DIR=$CEPH_DIR \
     SINGULARITYENV_RUN_MON=$RUN_MON \
     SINGULARITYENV_RUN_OSD=$RUN_OSD \
     SINGULARITYENV_OSD_TYPE=$OSD_TYPE \
@@ -74,8 +79,12 @@ function start() {
     SINGULARITYENV_POOL_SIZE=1 \
     SINGULARITYENV_PG_NUM=$PG_NUM \
     SINGULARITYENV_OP_THREADS=32 \
-    SINGULARITYENV_EXIT_AFTER_START=1 \
-        singularity run --writable instance://siriusdev /root/start_ceph.sh
+    SINGULARITYENV_EXIT_AFTER_START=0 \
+    singularity exec $SINGULARITY_IMAGE sudo echo $USER
+
+    #singularity run --writable instance://siriusdev /root/start_ceph.sh
+    #singularity help run
+    #singularity exec instance://siriusdev /bin/date
 }
 
 power2() { echo "x=l($1)/l(2); scale=0; 2^((x+0.5)/1)" | bc -l; }
@@ -91,7 +100,7 @@ PG_NUM=`power2 $PG_NUM`
 # servers
 
 CONTAINER_NAME=$HOST"-singularity"
-HOST_ADDR=`get_ip_addr`
+#HOST_ADDR=`get_ip_addr`
 
 RUN_MON=`is_mon`
 RUN_OSD=1

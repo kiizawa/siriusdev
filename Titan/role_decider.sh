@@ -2,18 +2,18 @@
 
 set -x
 
-NUM_SSD=1
-NUM_HDD=1
-#NUM_TD=1
+CEPH_SCRIPTS_DIR=$PROJWORK/csc143/$USER/ceph/scripts
+LOCK_FILE=$CEPH_SCRIPTS_DIR/lock
+ROLES_FILE=$CEPH_SCRIPTS_DIR/roles
+IP_ADDR_FILE=$CEPH_SCRIPTS_DIR/ip_addr
 
-SHARE_DIR=/tmp/share
-LOCK_FILE=$SHARE_DIR/lock
-ROLES_FILE=$SHARE_DIR/roles
-IP_ADDR_FILE=$SHARE_DIR/ip_addr
+source $CEPH_SCRIPTS_DIR/setting
 
 is_mon()
 {
+    set +e
     MON_RUNNING=`cat $ROLES_FILE | grep mon`
+    set -e
     if [ -z "$MON_RUNNING" ]
     then
 	echo 1
@@ -25,16 +25,20 @@ is_mon()
 
 get_pool()
 {
+    set +e
     NS=`cat $ROLES_FILE | grep ssd | wc -l`
-    if [ $NS -lt $NUM_SSD ]
+    set -e
+    if [ $NS -lt $NUM_SSD_NODES ]
     then
 	echo cache_pool
 	echo ssd" "`hostname -i` >> $ROLES_FILE
 	return
     fi
 
+    set +e
     NH=`cat $ROLES_FILE | grep hdd | wc -l`
-    if [ $NH -lt $NUM_HDD ]
+    set -e
+    if [ $NH -lt $NUM_HDD_NODES ]
     then
 	echo storage_pool
 	echo hdd" "`hostname -i` >> $ROLES_FILE
@@ -42,7 +46,7 @@ get_pool()
     fi
 
     #NT=`cat $ROLES_FILE | grep td | wc -l`
-    #if [ $NT -lt $NUM_TD ]
+    #if [ $NT -lt $NUM_TD_NODES ]
     #then
 	#echo archive_pool
 	#echo td"  "`hostname -i` >> $ROLES_FILE
