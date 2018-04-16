@@ -1,0 +1,49 @@
+#!/bin/bash
+#    Begin PBS directives
+#PBS -A CSC143
+#PBS -N test
+#PBS -j oe
+#PBS -l walltime=0:00:10,nodes=1
+#    End PBS directives and begin shell commands
+
+#free -m
+#ls /var/lib/*fs
+
+source $MODULESHOME/init/bash
+module load singularity
+$PROJWORK/csc143/$USER/ceph/scripts/check_singularity_container.sh
+
+#./role_decider.sh
+
+#hostname -i
+#ip addr show
+
+#touch dummy
+#dd if=/dev/zero of=data bs=1M count=1k
+#mkfs data
+#cd $MEMBERWORK/csc143
+#dd if=/dev/
+
+#free -g
+
+#mkdir /tmp/mnt_test
+#mount -o loop $HOME/data /tmp/mnt_test
+#mount
+#umount /tmp/mnt_test
+#rm -rf /tmp/mnt_test
+
+#echo $HOME
+#mount
+#df -h
+#ifconfig
+#cat /etc/hosts
+#hostname -i
+#ip addr show
+#sudo losetup -f
+#cd /home/kiizawa
+#pwd
+#echo test > data
+#echo var > /dev/shm/foo
+#cat /dev/shm/foo
+#ls /dev/shm
+#rm /dev/shm/foo
