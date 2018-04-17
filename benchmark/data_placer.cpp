@@ -21,7 +21,7 @@ void read(const std::string &object_list) {
 
   /* Load object list */
 
-  std::ifstream ifs(object_list);
+  std::ifstream ifs(object_list.c_str());
   if (ifs.fail()) {
     exit(0);
   }
