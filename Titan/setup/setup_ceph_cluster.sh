@@ -1,7 +1,7 @@
 #!/bin/sh
 
-NUM_SSD_NODES=1
-NUM_HDD_NODES=0
+NUM_SSD_NODES=0
+NUM_HDD_NODES=1
 NUM_TD_NODES=0
 
 CEPH_CONF_DIR=$PROJWORK/csc143/$USER/ceph/conf
@@ -10,14 +10,6 @@ then
     mkdir -p $CEPH_CONF_DIR
 else
     rm -rf $CEPH_CONF_DIR/*
-fi
-
-CEPH_DATA_DIR=$PROJWORK/csc143/$USER/ceph/data
-if [ ! -e $CEPH_DATA_DIR ]
-then
-    mkdir -p $CEPH_DATA_DIR
-else
-    rm -rf $CEPH_DATA_DIR/*
 fi
 
 CEPH_SCRIPTS_DIR=$PROJWORK/csc143/$USER/ceph/scripts
