@@ -30,6 +30,8 @@ void read(const std::string &object_list) {
 
   std::string line;
   while(getline(ifs, line)) {
+    std::vector<std::string> fields = split(line, ',');
+    std::string oid = fields[1];
     objects.push_back(line);
   }
 }
