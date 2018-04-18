@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source $MODULESHOME/init/bash
+module load singularity
+
 SINGULARITY_IMAGE=/ccs/home/kiizawa/titan_official.img
 CEPH_CONF_DIR=$PROJWORK/csc143/$USER/ceph/conf
 
