@@ -31,9 +31,4 @@ echo "NUM_HDD_NODES=$NUM_HDD_NODES" >> $CEPH_SCRIPTS_DIR/setting
 echo "NUM_TD_NODES=$NUM_TD_NODES"   >> $CEPH_SCRIPTS_DIR/setting
 
 NUM_NODES=`expr $NUM_SSD_NODES + $NUM_HDD_NODES + $NUM_TD_NODES`
-for i in `seq 1 $NUM_NODES`
-do
-    qsub setup.pbs
-done
-
-qsub check.pbs
+qsub -l nodes=$NUM_NODES -l walltime=00:01:00 setup.pbs

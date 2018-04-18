@@ -2,6 +2,9 @@
 
 set -ex
 
+source $MODULESHOME/init/bash
+module load singularity
+
 # settings
 
 SINGULARITY_IMAGE=/ccs/home/kiizawa/titan_official.img
@@ -14,7 +17,7 @@ NEED_XATTR_SSD=1
 CEPH_DIR_HDD=$PROJWORK/csc143/$USER/ceph/data
 NEED_XATTR_HDD=1
 
-CEPH_NET=160.91.205.0/26
+CEPH_NET=160.91.205.192/26
 
 OSD_NUM_PER_POOL=1
 
@@ -80,7 +83,7 @@ function start() {
     SINGULARITYENV_PG_NUM=$PG_NUM \
     SINGULARITYENV_OP_THREADS=32 \
     SINGULARITYENV_EXIT_AFTER_START=0 \
-    singularity exec $SINGULARITY_IMAGE sudo echo $USER
+    singularity exec $SINGULARITY_IMAGE /root/start_ceph.sh
 
     #singularity run --writable instance://siriusdev /root/start_ceph.sh
     #singularity help run
