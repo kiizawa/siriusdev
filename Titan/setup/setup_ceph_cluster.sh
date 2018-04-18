@@ -3,6 +3,7 @@
 NUM_SSD_NODES=0
 NUM_HDD_NODES=1
 NUM_TD_NODES=0
+TIME=00:01:00
 
 CEPH_CONF_DIR=$PROJWORK/csc143/$USER/ceph/conf
 if [ ! -e $CEPH_CONF_DIR ]
@@ -31,4 +32,4 @@ echo "NUM_HDD_NODES=$NUM_HDD_NODES" >> $CEPH_SCRIPTS_DIR/setting
 echo "NUM_TD_NODES=$NUM_TD_NODES"   >> $CEPH_SCRIPTS_DIR/setting
 
 NUM_NODES=`expr $NUM_SSD_NODES + $NUM_HDD_NODES + $NUM_TD_NODES`
-qsub -l nodes=$NUM_NODES -l walltime=00:01:00 setup.pbs
+qsub -l nodes=$NUM_NODES -l walltime=$TIME setup.pbs
