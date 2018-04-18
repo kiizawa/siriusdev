@@ -7,7 +7,7 @@ module load singularity
 
 # settings
 
-SINGULARITY_IMAGE=/ccs/home/kiizawa/titan_official.img
+SINGULARITY_IMAGE=$PROJWORK/csc143/kiizawa/titan_official.img
 
 CEPH_CONF_DIR=$PROJWORK/csc143/$USER/ceph/conf
 
@@ -15,9 +15,9 @@ CEPH_DIR_SSD=/dev/shm/$USER/ceph/data
 NEED_XATTR_SSD=1
 
 CEPH_DIR_HDD=$PROJWORK/csc143/$USER/ceph/data
-NEED_XATTR_HDD=1
+NEED_XATTR_HDD=0
 
-CEPH_NET=160.91.205.192/26
+CEPH_NET=10.128.0.0/14
 
 OSD_NUM_PER_POOL=1
 
@@ -55,7 +55,7 @@ function start() {
     if [ -n "$RUN_MON" -a $RUN_MON = 1 ]
     then
 	CEPH_NET_PREFIX=`echo $CEPH_NET | cut -d . -f 1-2`
-	MON_ADDR=`ip addr show | grep "inet " | sed -e 's/^[ ]*//g' | cut -d ' ' -f 2 | cut -d '/' -f 1 | grep $CEPH_NET_PREFIX`
+	MON_ADDR=`ip addr show | grep "inet " | sed -e 's/^[ ]*//g' | cut -d ' ' -f 2 | cut -d '/' -f 1 | grep $CEPH_NET_PREFIX | cut -d ' ' -f 1`
     fi
 
     #singularity instance.start \

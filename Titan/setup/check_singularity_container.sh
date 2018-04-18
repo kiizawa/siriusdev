@@ -3,7 +3,8 @@
 source $MODULESHOME/init/bash
 module load singularity
 
-SINGULARITY_IMAGE=/ccs/home/kiizawa/titan_official.img
+SINGULARITY_IMAGE=$PROJWORK/$USER/kiizawa/titan_official.img
 CEPH_CONF_DIR=$PROJWORK/csc143/$USER/ceph/conf
 
-singularity exec $SINGULARITY_IMAGE bash -c 'LD_LIBRARY_PATH=/usr/local/lib ceph -s -c $CEPH_CONF_DIR/ceph.conf'
+SINGULARITYENV_CEPH_CONF_DIR=$CEPH_CONF_DIR \
+    singularity exec $SINGULARITY_IMAGE /root/check_ceph.sh

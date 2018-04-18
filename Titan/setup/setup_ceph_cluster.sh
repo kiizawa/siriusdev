@@ -13,6 +13,8 @@ else
     rm -rf $CEPH_CONF_DIR/*
 fi
 
+rm -rf $PROJWORK/csc143/$USER/ceph/data*
+
 CEPH_SCRIPTS_DIR=$PROJWORK/csc143/$USER/ceph/scripts
 if [ ! -e $CEPH_SCRIPTS_DIR ]
 then
