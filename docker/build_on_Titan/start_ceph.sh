@@ -227,8 +227,6 @@ then
 
 	cat <<EOF >> $CEPH_CONF
 [osd]
-osd data = $OSD_DATA_DIR
-osd journal = $OSD_JOURNAL
 osd op threads = $OP_THREADS
 journal dio = $JOURNAL_DIO
 # needed to use ext4
@@ -273,6 +271,8 @@ EOF
 	cat <<EOF >> $CEPH_CONF
 [osd.$osd_num]
 host = `hostname -s`
+osd data = $OSD_DATA_DIR
+osd journal = $OSD_JOURNAL
 osd objectstore = bluestore
 bluestore block create = true
 bluestore block path = $BS_SLOW_BD
@@ -292,6 +292,8 @@ EOF
 	cat <<EOF >> $CEPH_CONF
 [osd.$osd_num]
 host = `hostname -s`
+osd data = $OSD_DATA_DIR
+osd journal = $OSD_JOURNAL
 osd objectstore = $OSD_TYPE
 
 EOF

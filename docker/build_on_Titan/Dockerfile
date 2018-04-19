@@ -54,7 +54,9 @@ COPY crushmap /root/
 
 # create mount points
 
-RUN mkdir /ceph_dir_with_xattr
+RUN mkdir /ceph_dir_with_xattr && \
+    chmod 777 /ceph_dir_with_xattr && \
+    ln -s /proc/self/mounts /etc/mtab
 
 # set permissions
 
