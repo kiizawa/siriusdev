@@ -1,9 +1,37 @@
 #!/bin/sh
+#
+# Description:
+#
+#  Set up a Ceph cluster on Titan's compute nodes.
+#  Clients can access the cluster by using ceph.conf.
+#  ceph.conf is automatically generated in $PROJWORK/csc143/$USER/ceph/conf.
+#
+# Usage:
+#
+#  ./setup_ceph_cluster.sh
+#
+# Configurations:
+#
+#  NUM_SSD_NODES
+#   The number of nodes that make up fast tier.
+#   Objects are stored in /dev/shm/$USER/ceph/data.*.
+#
+#  NUM_HDD_NODES
+#   The number of nodes that make up slow tier.
+#   Objects are stored in $PROJWORK/csc143/$USER/ceph/data.*.
+#
+#  NUM_TD_NODES
+#   The number of nodes that make up archive tier.
+#   Not supported yet.
+#
+#  TIME
+#    Lifetime of the cluster.
+#
 
-NUM_SSD_NODES=0
-NUM_HDD_NODES=1
+NUM_SSD_NODES=4
+NUM_HDD_NODES=2
 NUM_TD_NODES=0
-TIME=00:01:00
+TIME=00:05:00
 
 CEPH_CONF_DIR=$PROJWORK/csc143/$USER/ceph/conf
 if [ ! -e $CEPH_CONF_DIR ]
