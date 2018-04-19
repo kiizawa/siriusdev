@@ -3,12 +3,13 @@
 #PBS -A CSC143
 #PBS -N test
 #PBS -j oe
-#PBS -l walltime=0:00:30,nodes=1
 #    End PBS directives and begin shell commands
 
-source $MODULESHOME/init/bash
-module load singularity
-$PROJWORK/csc143/$USER/ceph/scripts/create_singularity_container.sh
+cd $PROJWORK
+CEPH_SCRIPTS_DIR=$PROJWORK/csc143/$USER/ceph/scripts
+source $CEPH_SCRIPTS_DIR/setting
+NUM_NODES=`expr $NUM_SSD_NODES + $NUM_HDD_NODES + $NUM_TD_NODES`
+aprun -n $NUM_NODES $PROJWORK/csc143/$USER/ceph/scripts/create_singularity_container.sh
 
 #./role_decider.sh
 #hostname -i

@@ -9,8 +9,6 @@
 #free -m
 #ls /var/lib/*fs
 
-source $MODULESHOME/init/bash
-module load singularity
 $PROJWORK/csc143/$USER/ceph/scripts/check_singularity_container.sh
 
 #./role_decider.sh

@@ -2,19 +2,21 @@
 
 set -ex
 
+source $MODULESHOME/init/bash
+module load singularity
+
 # settings
 
-SINGULARITY_IMAGE=/ccs/home/kiizawa/titan_official.img
-
+SINGULARITY_IMAGE=$PROJWORK/csc143/ceph/ceph_on_titan_v1.img
 CEPH_CONF_DIR=$PROJWORK/csc143/$USER/ceph/conf
 
 CEPH_DIR_SSD=/dev/shm/$USER/ceph/data
-NEED_XATTR_SSD=1
+NEED_XATTR_SSD=0
 
 CEPH_DIR_HDD=$PROJWORK/csc143/$USER/ceph/data
-NEED_XATTR_HDD=1
+NEED_XATTR_HDD=0
 
-CEPH_NET=160.91.205.0/26
+CEPH_NET=10.128.0.0/14
 
 OSD_NUM_PER_POOL=1
 
@@ -31,6 +33,7 @@ function start() {
 
     if [ $POOL = "cache_pool" ]
     then
+	OSD_TYPE=memstore
 	CEPH_DIR=$CEPH_DIR_SSD
 	NEED_XATTR=$NEED_XATTR_SSD
     fi
@@ -41,7 +44,7 @@ function start() {
 	NEED_XATTR=$NEED_XATTR_HDD
     fi
 
-    CEPH_DIR=$CEPH_DIR.$CONTAINER_NAME
+    CEPH_DIR=$CEPH_DIR.$CONTAINER_NAME.$$
     if [ ! -e "$CEPH_DIR" ]
     then
 	mkdir -p $CEPH_DIR
@@ -52,7 +55,7 @@ function start() {
     if [ -n "$RUN_MON" -a $RUN_MON = 1 ]
     then
 	CEPH_NET_PREFIX=`echo $CEPH_NET | cut -d . -f 1-2`
-	MON_ADDR=`ip addr show | grep "inet " | sed -e 's/^[ ]*//g' | cut -d ' ' -f 2 | cut -d '/' -f 1 | grep $CEPH_NET_PREFIX`
+	MON_ADDR=`ip addr show | grep "inet " | sed -e 's/^[ ]*//g' | cut -d ' ' -f 2 | cut -d '/' -f 1 | grep $CEPH_NET_PREFIX | cut -d ' ' -f 1`
     fi
 
     #singularity instance.start \
@@ -80,11 +83,7 @@ function start() {
     SINGULARITYENV_PG_NUM=$PG_NUM \
     SINGULARITYENV_OP_THREADS=32 \
     SINGULARITYENV_EXIT_AFTER_START=0 \
-    singularity exec $SINGULARITY_IMAGE sudo echo $USER
-
-    #singularity run --writable instance://siriusdev /root/start_ceph.sh
-    #singularity help run
-    #singularity exec instance://siriusdev /bin/date
+	singularity exec $SINGULARITY_IMAGE /root/start_ceph.sh
 }
 
 power2() { echo "x=l($1)/l(2); scale=0; 2^((x+0.5)/1)" | bc -l; }
