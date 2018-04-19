@@ -43,7 +43,7 @@ function start() {
 	NEED_XATTR=$NEED_XATTR_HDD
     fi
 
-    CEPH_DIR=$CEPH_DIR.$CONTAINER_NAME
+    CEPH_DIR=$CEPH_DIR.$CONTAINER_NAME.$$
     if [ ! -e "$CEPH_DIR" ]
     then
 	mkdir -p $CEPH_DIR
