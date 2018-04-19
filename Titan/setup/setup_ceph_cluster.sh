@@ -14,7 +14,7 @@
 #
 #  NUM_SSD_NODES
 #   The number of nodes that make up fast tier.
-#   Objects are stored in /dev/shm/$USER/ceph/data.*.
+#   Objects are stored in memory.
 #
 #  NUM_HDD_NODES
 #   The number of nodes that make up slow tier.
