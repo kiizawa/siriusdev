@@ -11,7 +11,7 @@ SINGULARITY_IMAGE=$PROJWORK/csc143/ceph/ceph_on_titan_v1.img
 CEPH_CONF_DIR=$PROJWORK/csc143/$USER/ceph/conf
 
 CEPH_DIR_SSD=/dev/shm/$USER/ceph/data
-NEED_XATTR_SSD=1
+NEED_XATTR_SSD=0
 
 CEPH_DIR_HDD=$PROJWORK/csc143/$USER/ceph/data
 NEED_XATTR_HDD=0
@@ -33,6 +33,7 @@ function start() {
 
     if [ $POOL = "cache_pool" ]
     then
+	OSD_TYPE=memstore
 	CEPH_DIR=$CEPH_DIR_SSD
 	NEED_XATTR=$NEED_XATTR_SSD
     fi
@@ -82,11 +83,7 @@ function start() {
     SINGULARITYENV_PG_NUM=$PG_NUM \
     SINGULARITYENV_OP_THREADS=32 \
     SINGULARITYENV_EXIT_AFTER_START=0 \
-    singularity exec $SINGULARITY_IMAGE /root/start_ceph.sh
-
-    #singularity run --writable instance://siriusdev /root/start_ceph.sh
-    #singularity help run
-    #singularity exec instance://siriusdev /bin/date
+	singularity exec $SINGULARITY_IMAGE /root/start_ceph.sh
 }
 
 power2() { echo "x=l($1)/l(2); scale=0; 2^((x+0.5)/1)" | bc -l; }
