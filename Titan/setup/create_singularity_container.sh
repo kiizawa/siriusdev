@@ -7,8 +7,7 @@ module load singularity
 
 # settings
 
-SINGULARITY_IMAGE=$PROJWORK/csc143/kiizawa/titan_official.img
-
+SINGULARITY_IMAGE=$PROJWORK/csc143/ceph/ceph_on_titan_v1.img
 CEPH_CONF_DIR=$PROJWORK/csc143/$USER/ceph/conf
 
 CEPH_DIR_SSD=/dev/shm/$USER/ceph/data
