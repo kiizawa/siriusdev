@@ -8,3 +8,6 @@ analyser:
 
 replayer: replayer.cpp
 	g++ -g -I ../lib replayer.cpp ../lib/object_mover.cpp -lboost_system -lboost_thread -lrados -o replayer.exe
+
+data_placer: data_placer.cpp
+	g++ -g data_placer.cpp -o data_placer.exe

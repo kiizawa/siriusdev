@@ -3,9 +3,15 @@
 
 #include <iostream>
 #include <fstream>
+#include <list>
+#include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
+
+int B_HDD;
+int B_SSD;
 
 std::vector<std::string> split(std::string input, char delimiter) {
   std::istringstream stream(input);
@@ -17,35 +23,152 @@ std::vector<std::string> split(std::string input, char delimiter) {
   return result;
 }
 
-void read(const std::string &object_list) {
+bool is_in(const std::vector<std::string> &list, const std::string &s) {
+  std::vector<std::string>::const_iterator it;
+  for (it = list.begin(); it != list.end(); it++) {
+    if (*it == s) {
+      return true;
+    }
+  }
+  return false;
+}
 
-  /* Load object list */
+void read(const std::string &file_list) {
 
-  std::ifstream ifs(object_list.c_str());
-  if (ifs.fail()) {
+  /* Load file list */
+
+  std::ifstream ifs_file_list(file_list.c_str());
+  if (ifs_file_list.fail()) {
     exit(0);
   }
 
-  std::vector<std::string> objects;
+  std::map<std::string, int> object_map;
 
+  std::string file_name;
+  while(getline(ifs_file_list, file_name)) {
+    std::ifstream ifs_object_list(file_name.c_str());
+    std::string line;
+    while(getline(ifs_object_list, line)) {
+      std::map<std::string, int>::iterator it = object_map.find(line);
+      if (it == object_map.end()) {
+	object_map[line] = 1;
+      } else {
+	it->second = it->second + 1;
+      }
+    }
+    //std::vector<std::string> fields = split(line, ',');
+    //std::string oid = fields[1];
+    //objects.push_back(line);
+  }
+  ifs_file_list.close();
+
+  std::map<int, int> counts;
+
+  std::vector<std::string> objects_in_ssd;
+  std::vector<std::string> objects_in_hdd_tmp;
+
+  std::map<std::string, int>::iterator it;
+  for (it = object_map.begin(); it != object_map.end(); ++it) {
+    if (it->second > 1) {
+      objects_in_ssd.push_back(it->first);
+    } else {
+      objects_in_hdd_tmp.push_back(it->first);
+    }
+    int count = it->second;
+    std::map<int, int>::iterator it2 = counts.find(count);
+    if (it2 == counts.end()) {
+      counts[count] = 1;
+    } else {
+      it2->second = it2->second + 1;
+    }
+  }
+
+  std::map<int, int>::iterator it2;
+  for (it2 = counts.begin(); it2 != counts.end(); ++it2) {
+    printf("count=%d,%6d [objs]\n", it2->first, it2->second);
+  }
+  printf("working set size=%d [objs] %d [GiB]\n", object_map.size(), object_map.size() * 8 / 1024);
+
+  int C_ssd = object_map.size() * 8 * B_SSD / (B_HDD + B_SSD);
+  printf("C_ssd=%d[MB] %d[objs]\n", C_ssd, C_ssd/8);
+
+  int diff = C_ssd/8 - objects_in_ssd.size();
+  int total = objects_in_hdd_tmp.size();
+
+  std::set<int> rands;
+  while (rands.size() < diff) {
+    int i = rand() % total;
+    rands.insert(i);
+  }
+
+  std::set<int>::iterator it3;
+  for (it3 = rands.begin(); it3 != rands.end(); it3++) {
+    objects_in_ssd.push_back(objects_in_hdd_tmp[*it3]);
+  }
+
+  double ratio = (double)B_SSD/B_HDD;
+  printf("best ratio=%f\n", ratio);
+
+  std::ifstream ifs_file_list2(file_list.c_str());
+  if (ifs_file_list2.fail()) {
+    exit(0);
+  }
+
+#if 0
+  while(getline(ifs_file_list2, file_name)) {
+    std::ifstream ifs_object_list(file_name.c_str());
+    //std::string output_file_name_ssd = file_name + "_ssd_" + itoa(B_SSD) + "_" + itoa(B_HDD);
+    //std::string output_file_name_hdd = file_name + "_hdd_" + itoa(B_SSD) + "_" + itoa(B_HDD);
+    std::string line;
+    int count_ssd = 0;
+    int count_hdd = 0;
+    while(getline(ifs_object_list, line)) {
+      if (is_in(objects_in_ssd, line)) {
+	count_ssd++;
+      } else {
+	count_hdd++;
+      }
+    }
+    printf("filename=%s ratio=%f\n", file_name.c_str(), (double)count_ssd/count_hdd);
+  }
+  ifs_file_list2.close();
+#endif
+
+#if 0
+  while (objects_in_ssd.size() < C_ssd/8) {
+    objects_in_ssd.push_back();
+  }
+#endif
+
+#if 0
+  std::vector<std::string> objects;
   std::string line;
   while(getline(ifs, line)) {
     std::vector<std::string> fields = split(line, ',');
     std::string oid = fields[1];
     objects.push_back(line);
   }
+#endif
 }
 
 int main(int argc, char *argv[]) {
 
-  std::string object_list;
+  std::string file_list;
 
   int opt;
-  while ((opt = ::getopt(argc, argv, "l:h")) != -1) {
+  while ((opt = ::getopt(argc, argv, "d:s:l:h")) != -1) {
     switch (opt) {
     case 'l':
-      /* object list */
-      object_list = optarg;
+      /* file list */
+      file_list = optarg;
+      break;
+    case 's':
+      /* SSD bandwidth */
+      B_SSD = atoi(optarg);
+      break;
+    case 'd':
+      /* HDD bandwidth */
+      B_HDD = atoi(optarg);
       break;
     case 'h':
     default:
@@ -55,7 +178,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  read(object_list);
+  read(file_list);
 
   return 0;
 }
