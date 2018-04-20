@@ -33,7 +33,7 @@ bool is_in(const std::vector<std::string> &list, const std::string &s) {
   return false;
 }
 
-void read(const std::string &file_list) {
+void read(const std::string &file_list, const std::string &object_list) {
 
   /* Load file list */
 
@@ -87,7 +87,7 @@ void read(const std::string &file_list) {
   for (it2 = counts.begin(); it2 != counts.end(); ++it2) {
     printf("count=%d,%6d [objs]\n", it2->first, it2->second);
   }
-  printf("working set size=%d [objs] %d [GiB]\n", object_map.size(), object_map.size() * 8 / 1024);
+  printf("working set size=%lu [objs] %lu [GiB]\n", object_map.size(), object_map.size() * 8 / 1024);
 
   int C_ssd = object_map.size() * 8 * B_SSD / (B_HDD + B_SSD);
   printf("C_ssd=%d[MB] %d[objs]\n", C_ssd, C_ssd/8);
@@ -149,18 +149,35 @@ void read(const std::string &file_list) {
     objects.push_back(line);
   }
 #endif
+
+  std::ofstream ofs_object_list(object_list.c_str());
+  if (ofs_object_list.fail()) {
+    exit(0);
+  }
+  {
+    std::vector<std::string>::const_iterator it;
+    for (it = objects_in_ssd.begin(); it != objects_in_ssd.end(); it++) {
+      ofs_object_list << *it << std::endl;
+    }
+    ofs_object_list.close();
+  }
 }
 
 int main(int argc, char *argv[]) {
 
   std::string file_list;
-
+  std::string object_list;
+  
   int opt;
-  while ((opt = ::getopt(argc, argv, "d:s:l:h")) != -1) {
+  while ((opt = ::getopt(argc, argv, "d:s:i:o:h")) != -1) {
     switch (opt) {
-    case 'l':
-      /* file list */
+    case 'i':
+      /* input file list */
       file_list = optarg;
+      break;
+    case 'o':
+      /* output object list */
+      object_list = optarg;
       break;
     case 's':
       /* SSD bandwidth */
@@ -178,7 +195,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  read(file_list);
+  read(file_list, object_list);
 
   return 0;
 }
