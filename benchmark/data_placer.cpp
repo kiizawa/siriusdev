@@ -33,7 +33,7 @@ bool is_in(const std::vector<std::string> &list, const std::string &s) {
   return false;
 }
 
-void read(const std::string &file_list, const std::string &object_list) {
+void read(const std::string &file_list, const std::string &object_list, const std::string &working_set_list) {
 
   /* Load file list */
 
@@ -161,22 +161,38 @@ void read(const std::string &file_list, const std::string &object_list) {
     }
     ofs_object_list.close();
   }
+  std::ofstream ofs_object_list2(working_set_list.c_str());
+  if (ofs_object_list2.fail()) {
+    exit(0);
+  }
+  {
+    std::map<std::string, int>::iterator it2;
+    for (it2 = object_map.begin(); it2 != object_map.end(); it2++) {
+      ofs_object_list2 << it2->first << ",8388608" << std::endl;
+    }
+    ofs_object_list2.close();
+  }
 }
 
 int main(int argc, char *argv[]) {
 
   std::string file_list;
   std::string object_list;
+  std::string working_set_list;
   
   int opt;
-  while ((opt = ::getopt(argc, argv, "d:s:i:o:h")) != -1) {
+  while ((opt = ::getopt(argc, argv, "w:d:s:i:o:h")) != -1) {
     switch (opt) {
     case 'i':
       /* input file list */
       file_list = optarg;
       break;
+    case 'w':
+      /* output object list(working set) */
+      working_set_list = optarg;
+      break;
     case 'o':
-      /* output object list */
+      /* output object list(ssd) */
       object_list = optarg;
       break;
     case 's':
@@ -195,7 +211,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  read(file_list, object_list);
+  read(file_list, object_list, working_set_list);
 
   return 0;
 }

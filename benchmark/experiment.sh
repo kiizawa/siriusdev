@@ -44,6 +44,13 @@ STATS=$LOG_DIR/stats.all
 SYNC_FILE=/tmp/share/done
 rm -rf $SYNC_FILE
 
+# calcuate data placement
+
+SSD_OBJECTS_LIST=/tmp/share/out
+WORKING_SET_LIST=/tmp/share/working_set
+rm -f $SSD_OBJECTS_LIST
+./data_placer.exe -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $WORKING_SET_LIST
+
 # write (hdd)
 
 touch $SYNC_FILE
@@ -98,12 +105,6 @@ echo "" >> $STATS
 ./analyser.exe $ALL_W_LOG >> $STATS
 echo "" >> $STATS
 echo "" >> $STATS
-
-# calcuate data placement
-
-SSD_OBJECTS_LIST=/tmp/share/out
-rm -f $SSD_OBJECTS_LIST
-./data_placer.exe -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST
 
 # move (hdd -> ssd)
 
