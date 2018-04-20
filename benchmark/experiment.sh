@@ -79,7 +79,7 @@ do
     fi
     W_LIST=$SHARED_LIST_DIR/writer_list/writer_list_u
     W_LOG=$LOG_DIR/wh.log.${i}
-    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $W_LIST; echo $i >> $SYNC_FILE"
+    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $WORKING_SET_LIST; echo $i >> $SYNC_FILE"
 done
 
 set +ex
