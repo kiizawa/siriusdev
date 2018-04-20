@@ -49,6 +49,7 @@ rm -rf $SYNC_FILE
 SSD_OBJECTS_LIST=/tmp/share/out
 WORKING_SET_LIST=/tmp/share/working_set
 rm -f $SSD_OBJECTS_LIST
+rm -f $WORKING_SET_LIST
 ./data_placer.exe -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $WORKING_SET_LIST
 
 # write (hdd)
