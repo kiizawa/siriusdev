@@ -8,7 +8,7 @@ B_SSD=350
 POLICY=RANDOM
 
 #READ_PATTERN="p1"
-#CLIENT_IDS="0"
+#WRITER_IDS="0"
 
 WRITER_IDS="0"
 
@@ -96,7 +96,7 @@ set -ex
 rm -rf $SYNC_FILE
 
 ALL_W_LOG=$LOG_DIR/wh.log.all
-for i in $CLIENT_IDS
+for i in $WRITER_IDS
 do
     W_LOG=$LOG_DIR/wh.log.${i}
     cat $W_LOG >> $ALL_W_LOG
@@ -111,7 +111,7 @@ echo "" >> $STATS
 
 touch $SYNC_FILE
 
-for i in $CLIENT_IDS
+for i in $WRITER_IDS
 do
     if [ $i = "0" ]
     then
@@ -151,7 +151,7 @@ set -ex
 rm -rf $SYNC_FILE
 
 ALL_M_LOG=$LOG_DIR/ms.log.all
-for i in $CLIENT_IDS
+for i in $WRITER_IDS
 do
     M_LOG=$LOG_DIR/ms.log.${i}
     cat $M_LOG >> $ALL_M_LOG
@@ -168,7 +168,7 @@ exit
 
 touch $SYNC_FILE
 
-for i in $CLIENT_IDS
+for i in $WRITER_IDS
 do
     if [ $i = "0" ]
     then
@@ -198,7 +198,7 @@ done
 set +e
 while true
 do
-    if [ `cat $SYNC_FILE | wc -l` -eq $NUM_CLIENTS ]
+    if [ `cat $SYNC_FILE | wc -l` -eq $NUM_WRITERS ]
     then
 	break
     fi
@@ -208,7 +208,7 @@ rm -rf $SYNC_FILE
 set -e
 
 ALL_R_LOG=$LOG_DIR/rs.log.all
-for i in $CLIENT_IDS
+for i in $WRITER_IDS
 do
     R_LOG=$LOG_DIR/rs.log.${i}
     cat $R_LOG >> $ALL_R_LOG
