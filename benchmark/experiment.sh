@@ -141,7 +141,7 @@ done
 set +ex
 while true
 do
-    if [ `cat $SYNC_FILE | wc -l` -eq $NUM_CLIENTS ]
+    if [ `cat $SYNC_FILE | wc -l` -eq $NUM_WRITERS ]
     then
 	break
     fi
