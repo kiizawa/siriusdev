@@ -3,8 +3,8 @@
 set -ex
 
 #ALL_DATA_LIST=
-B_HDD=
-B_SSD=
+B_HDD=140
+B_SSD=350
 POLICY=RANDOM
 
 #READ_PATTERN="p1"
@@ -99,7 +99,11 @@ echo "" >> $STATS
 echo "" >> $STATS
 echo "" >> $STATS
 
-exit
+# calcuate data placement
+
+SSD_OBJECTS_LIST=/tmp/share/out
+rm -f $SSD_OBJECTS_LIST
+./data_placer.exe -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST
 
 # move (hdd -> ssd)
 
@@ -127,7 +131,7 @@ do
     then
 	NODE=192.168.0.14
     fi
-    R_LIST=$SHARED_LIST_DIR/reader_${READ_PATTERN}_list/reader_${READ_PATTERN}_list.$i
+    R_LIST=$SSD_OBJECTS_LIST
     M_LOG=$LOG_DIR/ms.log.${i}
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m m -r $SSD_TIER -f $M_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
@@ -155,6 +159,8 @@ echo "" >> $STATS
 ./analyser.exe $ALL_M_LOG >> $STATS
 echo "" >> $STATS
 echo "" >> $STATS
+
+exit
 
 # read (ssd)
 
