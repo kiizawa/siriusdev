@@ -43,7 +43,7 @@ public:
   }
   ~SessionPool() {
     for (std::map<Session*, bool>::iterator it = pool_.begin(); it != pool_.end(); it++) {
-      delete it->first;
+      // delete it->first;
     }
   }
   void ReserveSession(boost::thread::id id) {
