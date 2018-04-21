@@ -198,7 +198,7 @@ do
     #fi
     R_LIST=$SHARED_LIST_DIR/paper/reader_${PATTERN}_list
     R_LOG=$LOG_DIR/$R_LIST.log
-    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $R_LIST >> $STATS; /tmp/share/analyser.exe $R_LIST >> $STATS ; echo $i >> $SYNC_FILE"
+    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $R_LIST >> $STATS; /tmp/share/analyser.exe $R_LOG >> $STATS ; echo $i >> $SYNC_FILE"
 done
 
 set +e
