@@ -2,7 +2,7 @@
 
 set -ex
 
-DOCKER_IMAGE=kiizawa/siriusdev:memstore_journal_monip
+DOCKER_IMAGE=kiizawa/siriusdev:base6
 CLIENTS="node-0"
 SERVERS="node-1 node-2"
 

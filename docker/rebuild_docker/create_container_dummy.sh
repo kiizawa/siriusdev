@@ -4,7 +4,7 @@ set -ex
 
 HOST=`hostname`
 
-DOCKER_IMAGE=kiizawa/siriusdev:base4
+DOCKER_IMAGE=kiizawa/siriusdev:base6
 
 function start() {
     docker run -it -d --privileged  \
