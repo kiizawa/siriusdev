@@ -40,7 +40,7 @@ then
     mkdir $SHARED_LOG_DIR
 fi
 
-LOG_DIR=$SHARED_LOG_DIR/${NUM_NODES}
+LOG_DIR=$SHARED_LOG_DIR/${NUM_NODES}_${B_HDD}_${B_SSD}
 rm -rf $LOG_DIR; mkdir $LOG_DIR
 
 STATS=$LOG_DIR/stats.all
