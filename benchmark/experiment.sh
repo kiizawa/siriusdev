@@ -141,7 +141,8 @@ do
     #fi
     if [ $MODE = "ALL" ]
     then
-	M_LIST=$WORKING_SET_LIST
+	cat $WORKING_SET_LIST | cut -d , -f 1 > /tmp/share/working_set.move
+	M_LIST=/tmp/share/working_set.move
     else
 	M_LIST=$SSD_OBJECTS_LIST
     fi
