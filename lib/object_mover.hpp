@@ -221,6 +221,7 @@ private:
 	    TaskInfo t = it->second;
 	    latencies.insert(now - t.start);
 	    if (now - t.start > 10*1000) {
+	      std::cout << now << " " << t.start << std::endl;
 	      // retry
 	      t.start = now;
 	      it->second = t;
