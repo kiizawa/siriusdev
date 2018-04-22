@@ -91,8 +91,6 @@ echo "" >> $STATS
 echo "" >> $STATS
 echo "" >> $STATS
 
-exit
-
 # read (hdd)
 
 touch $SYNC_FILE
