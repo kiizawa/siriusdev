@@ -2,13 +2,14 @@
 
 set -ex
 
-#ALL_DATA_LIST=
-B_HDD=140
-B_SSD=350
+MODE=ALL
 POLICY=RANDOM
 
-#READ_PATTERN="p1"
-#WRITER_IDS="0"
+#MODE=PARTIAL
+#POLICY=HINT
+
+B_HDD=140
+B_SSD=350
 
 WRITER_IDS="0"
 NUM_WRITERS=`echo $WRITER_IDS | wc -w`
@@ -16,8 +17,8 @@ NUM_WRITERS=`echo $WRITER_IDS | wc -w`
 READER_IDS="0 1 2 3"
 NUM_READERS=`echo $READER_IDS | wc -w`
 
-THREAD_NUM=16
 NUM_NODES=2
+THREAD_NUM=16
 
 METHOD=pool
 HDD_TIER=s
@@ -40,7 +41,7 @@ then
     mkdir $SHARED_LOG_DIR
 fi
 
-LOG_DIR=$SHARED_LOG_DIR/${NUM_NODES}_${B_HDD}_${B_SSD}
+LOG_DIR=$SHARED_LOG_DIR/${NUM_NODES}_${MODE}_${POLICY}
 rm -rf $LOG_DIR; mkdir $LOG_DIR
 
 STATS=$LOG_DIR/stats.all
@@ -82,9 +83,10 @@ do
     then
 	NODE=192.168.0.14
     fi
-    W_LIST=$SHARED_LIST_DIR/writer_list/writer_list_u
+    #W_LIST=$SHARED_LIST_DIR/writer_list/writer_list_u
+    W_LIST=$WORKING_SET_LIST
     W_LOG=$LOG_DIR/wh.log.${i}
-    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $WORKING_SET_LIST; echo $i >> $SYNC_FILE"
+    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $W_LIST; echo $i >> $SYNC_FILE"
 done
 
 set +ex
@@ -121,25 +123,30 @@ do
     then
 	NODE=192.168.0.10
     fi
-    if [ $i = "1" ]
+    #if [ $i = "1" ]
+    #then
+	#NODE=192.168.0.11
+    #fi
+    #if [ $i = "2" ]
+    #then
+	#NODE=192.168.0.12
+    #fi
+    #if [ $i = "3" ]
+    #then
+	#NODE=192.168.0.13
+    #fi
+    #if [ $i = "4" ]
+    #then
+	#NODE=192.168.0.14
+    #fi
+    if [ $MODE = "ALL" ]
     then
-	NODE=192.168.0.11
+	M_LIST=$SSD_OBJECTS_LIST
+    else
+	M_LIST=$WORKING_SET_LIST
     fi
-    if [ $i = "2" ]
-    then
-	NODE=192.168.0.12
-    fi
-    if [ $i = "3" ]
-    then
-	NODE=192.168.0.13
-    fi
-    if [ $i = "4" ]
-    then
-	NODE=192.168.0.14
-    fi
-    R_LIST=$SSD_OBJECTS_LIST
     M_LOG=$LOG_DIR/ms.log.${i}
-    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m m -r $SSD_TIER -f $M_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
+    ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m m -r $SSD_TIER -f $M_LOG -l $M_LIST; echo $i >> $SYNC_FILE"
 done
 
 set +ex
