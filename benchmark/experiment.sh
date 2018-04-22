@@ -141,9 +141,9 @@ do
     #fi
     if [ $MODE = "ALL" ]
     then
-	M_LIST=$SSD_OBJECTS_LIST
-    else
 	M_LIST=$WORKING_SET_LIST
+    else
+	M_LIST=$SSD_OBJECTS_LIST
     fi
     M_LOG=$LOG_DIR/ms.log.${i}
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m m -r $SSD_TIER -f $M_LOG -l $M_LIST; echo $i >> $SYNC_FILE"
