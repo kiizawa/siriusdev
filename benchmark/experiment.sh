@@ -204,7 +204,7 @@ done
 set +e
 while true
 do
-    if [ `cat $SYNC_FILE | wc -l` -eq $NUM_WRITERS ]
+    if [ `cat $SYNC_FILE | wc -l` -eq $NUM_READERS ]
     then
 	break
     fi
