@@ -112,7 +112,7 @@ then
 	RUN_MON=0
 	RUN_OSD=1
     fi
-    OSD_TYPE="filestore"
+    OSD_TYPE="bluestore"
     DEVICE_ARGS="-e BS_FAST_BD=/dev/sdc -e BS_SLOW_BD=/dev/sdb"
     POOL="storage_pool"
     start
