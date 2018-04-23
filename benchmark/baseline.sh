@@ -117,7 +117,7 @@ do
     then
 	NODE=192.168.0.14
     fi
-    R_LIST=$SHARED_LIST_DIR/reader_${READ_PATTERN}_list/reader_${READ_PATTERN}_list
+    R_LIST=$SHARED_LIST_DIR/paper/reader_p1_list
     R_LOG=$LOG_DIR/rh.log.${i}
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
@@ -172,7 +172,7 @@ do
     then
 	NODE=192.168.0.14
     fi
-    R_LIST=$SHARED_LIST_DIR/reader_${READ_PATTERN}_list/reader_${READ_PATTERN}_list
+    R_LIST=$SHARED_LIST_DIR/paper/reader_p1_list
     M_LOG=$LOG_DIR/ms.log.${i}
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m m -r $SSD_TIER -f $M_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
@@ -227,7 +227,7 @@ do
     then
 	NODE=192.168.0.14
     fi
-    R_LIST=$SHARED_LIST_DIR/reader_${READ_PATTERN}_list/reader_${READ_PATTERN}_list
+    R_LIST=$SHARED_LIST_DIR/paper/reader_p1_list
     R_LOG=$LOG_DIR/rs.log.${i}
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
