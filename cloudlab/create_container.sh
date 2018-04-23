@@ -26,20 +26,27 @@ IP_ADDRS=(
 )
 
 function start() {
+
+    CEPH_DIR_LOGICAL=/tmp/ceph
+    CEPH_DIR_PHYSICAL=$CEPH_DIR_LOGICAL.$HOST_NAME
+    if [ ! -e "$CEPH_DIR_PHYSICAL" ]
+    then
+	mkdir $CEPH_DIR_PHYSICAL
+    else
+	sudo rm -rf $CEPH_DIR_PHYSICAL/*
+    fi
+
     docker run -it -d --privileged  \
 	--name $HOST_NAME \
 	--net cephnet \
 	--hostname $HOST_NAME \
 	--ip $HOST_ADDR \
-	-v /dev/shm:/dev/shm \
-	-v /tmp/share:/tmp/share \
-	-e CEPH_CONF_DIR=/tmp/share \
+	-v $CEPH_CONF_DIR:$CEPH_CONF_DIR \
+	-v $CEPH_DIR_PHYSICAL:$CEPH_DIR_LOGICAL \
+	-e CEPH_CONF_DIR=$CEPH_CONF_DIR \
+	-e CEPH_DIR=$CEPH_DIR_LOGICAL \
 	-e RUN_MON=$RUN_MON \
 	-e RUN_OSD=$RUN_OSD \
-	-e CEPH_CONF_DIR=$CEPH_CONF_DIR \
-	-e CEPH_DIR=$CEPH_DIR \
-	-e LOG_DIR=$LOG_DIR \
-	-e OSD_JOURNAL=$OSD_JOURNAL \
 	-e OSD_TYPE=$OSD_TYPE $DEVICE_ARGS \
 	-e POOL=$POOL \
 	-e CEPH_PUBLIC_NETWORK=$CEPH_NET \
@@ -54,25 +61,29 @@ HOST=`hostname`
 HOST_NAME=$HOST"-docker"
 HOST_ADDR=${IP_ADDRS[$HOST]}
 
-LOG_DIR=/dev/shm/$HOST_NAME
-if [ -e "$LOG_DIR" ]
-then
-    sudo rm -rf $LOG_DIR/*
-else
-    mkdir $LOG_DIR
-fi
-
-OSD_JOURNAL=/tmp/journal
-
 CEPH_CONF_DIR=/tmp/share
-
-CEPH_DIR=/dev/shm/ceph
-if [ -e "$CEPH_DIR" ]
+if [ ! -e "$CEPH_CONF_DIR" ]
 then
-    sudo rm -rf $CEPH_DIR/*
-else
-    mkdir $CEPH_DIR
+    mkdir $CEPH_CONF_DIR
 fi
+
+#LOG_DIR=/dev/shm/$HOST_NAME
+#if [ -e "$LOG_DIR" ]
+#then
+#    sudo rm -rf $LOG_DIR/*
+#else
+#    mkdir $LOG_DIR
+#fi
+
+#OSD_JOURNAL=/tmp/journal
+
+#CEPH_DIR=/dev/shm/ceph
+#if [ -e "$CEPH_DIR" ]
+#then
+#    sudo rm -rf $CEPH_DIR/*
+#else
+#    mkdir $CEPH_DIR
+#fi
 
 OSD_NUM_PER_POOL=`echo $SERVERS | wc -w`
 PG_NUM=`expr $OSD_NUM_PER_POOL \* 100`
