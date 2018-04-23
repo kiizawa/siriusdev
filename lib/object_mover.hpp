@@ -212,13 +212,14 @@ private:
     }
     void WatchTasks() {
       while (true) {
-	unsigned long now = GetCurrentTime();
 	std::multiset<unsigned long> latencies;
 	{
 	  boost::mutex::scoped_lock l(lock_);
+	  unsigned long now = GetCurrentTime();
 	  std::map<unsigned long, TaskInfo>::iterator it;
 	  for (it = task_table_.begin(); it != task_table_.end(); it++) {
 	    TaskInfo t = it->second;
+	    assert(now >= t.start);
 	    latencies.insert(now - t.start);
 	    if (now - t.start > 10*1000) {
 	      // retry
