@@ -2,7 +2,7 @@
 
 set -ex
 
-DOCKER_IMAGE=kiizawa/siriusdev:memstore_journal_monip_xattr
+DOCKER_IMAGE=kiizawa/siriusdev:base6
 CLIENTS="node-0"
 SERVERS="node-1 node-2"
 
@@ -32,8 +32,8 @@ function start() {
 	--hostname $HOST_NAME \
 	--ip $HOST_ADDR \
 	-v /dev/shm:/dev/shm \
-	-v /tmp/share:/share \
-	-e CEPH_CONF_DIR=/share \
+	-v /tmp/share:/tmp/share \
+	-e CEPH_CONF_DIR=/tmp/share \
 	-e RUN_MON=$RUN_MON \
 	-e RUN_OSD=$RUN_OSD \
 	-e CEPH_CONF_DIR=$CEPH_CONF_DIR \
@@ -64,7 +64,7 @@ fi
 
 OSD_JOURNAL=/tmp/journal
 
-CEPH_CONF_DIR=/share
+CEPH_CONF_DIR=/tmp/share
 
 CEPH_DIR=/dev/shm/ceph
 if [ -e "$CEPH_DIR" ]
