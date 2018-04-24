@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
   std::string file_list;
   std::string object_list;
   std::string working_set_list;
-  std::string pocliy;
+  std::string policy;
   
   int opt;
   while ((opt = ::getopt(argc, argv, "p:w:d:s:i:o:h")) != -1) {
