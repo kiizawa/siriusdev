@@ -33,7 +33,7 @@ bool is_in(const std::vector<std::string> &list, const std::string &s) {
   return false;
 }
 
-void read(const std::string &file_list, const std::string &object_list, const std::string &working_set_list) {
+void read(const std::string &policy, const std::string &file_list, const std::string &object_list, const std::string &working_set_list) {
 
   /* Load file list */
 
@@ -179,10 +179,14 @@ int main(int argc, char *argv[]) {
   std::string file_list;
   std::string object_list;
   std::string working_set_list;
+  std::string pocliy;
   
   int opt;
-  while ((opt = ::getopt(argc, argv, "w:d:s:i:o:h")) != -1) {
+  while ((opt = ::getopt(argc, argv, "p:w:d:s:i:o:h")) != -1) {
     switch (opt) {
+    case 'p':
+      policy = optarg;
+      break;
     case 'i':
       /* input file list */
       file_list = optarg;
@@ -211,7 +215,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  read(file_list, object_list, working_set_list);
+  read(policy, file_list, object_list, working_set_list);
 
   return 0;
 }
