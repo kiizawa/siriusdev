@@ -55,7 +55,14 @@ SSD_OBJECTS_LIST=/tmp/share/ssd_set
 WORKING_SET_LIST=/tmp/share/working_set
 rm -f $SSD_OBJECTS_LIST
 rm -f $WORKING_SET_LIST
-./data_placer.exe -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $WORKING_SET_LIST
+if [ $POLICY = "RANDOM" ]
+then
+    P_ARG=
+elif [ $POLICY = "HINT" ]
+then
+    P_ARG=
+fi
+./data_placer.exe -p $P_ARG -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $WORKING_SET_LIST
 
 # write (hdd)
 
