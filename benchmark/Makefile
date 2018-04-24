@@ -11,3 +11,6 @@ replayer: replayer.cpp
 
 data_placer: data_placer.cpp
 	g++ -g data_placer.cpp -o data_placer.exe
+
+data_placer_hint: data_placer_hint.cpp
+	g++ -g data_placer_hint.cpp -o data_placer_hint.exe
