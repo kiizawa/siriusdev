@@ -57,12 +57,11 @@ rm -f $SSD_OBJECTS_LIST
 rm -f $WORKING_SET_LIST
 if [ $POLICY = "RANDOM" ]
 then
-    P_ARG=
+    ./data_placer.exe      -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $WORKING_SET_LIST
 elif [ $POLICY = "HINT" ]
 then
-    P_ARG=
+    ./data_placer_hint.exe -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $WORKING_SET_LIST
 fi
-./data_placer.exe -p $P_ARG -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $WORKING_SET_LIST
 
 # write (hdd)
 
