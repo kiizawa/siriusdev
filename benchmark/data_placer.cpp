@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -75,7 +76,7 @@ void read(const std::string &policy, const std::string &file_list, const std::st
   {
     std::map<std::string, int>::iterator it;
     for (it = object_map.begin(); it != object_map.end(); it++) {
-      all_objects.insert(it->first);
+      all_objects.push_back(it->first);
     }
   }
 
@@ -108,7 +109,7 @@ void read(const std::string &policy, const std::string &file_list, const std::st
     std::vector<std::string> objects_in_ssd;
     std::vector<std::string> objects_in_hdd;
     for (int i = 0; i < objects.size(); i++) {
-      std::set<int>::iterator it = all_objects_in_ssd_set.find(i);
+      std::set<std::string>::iterator it = all_objects_in_ssd_set.find(objects[i]);
       if (it == all_objects_in_ssd_set.end()) {
 	objects_in_hdd.push_back(objects[i]);
       } else {
@@ -168,6 +169,7 @@ void read(const std::string &policy, const std::string &file_list, const std::st
   }
 #endif
 
+#if 0
   std::map<int, int>::iterator it2;
   for (it2 = counts.begin(); it2 != counts.end(); ++it2) {
     printf("count=%d,%6d [objs]\n", it2->first, it2->second);
@@ -198,7 +200,8 @@ void read(const std::string &policy, const std::string &file_list, const std::st
   if (ifs_file_list2.fail()) {
     exit(0);
   }
-
+#endif
+  
 #if 0
   while(getline(ifs_file_list2, file_name)) {
     std::ifstream ifs_object_list(file_name.c_str());
@@ -240,8 +243,8 @@ void read(const std::string &policy, const std::string &file_list, const std::st
     exit(0);
   }
   {
-    std::vector<std::string>::const_iterator it;
-    for (it = objects_in_ssd.begin(); it != objects_in_ssd.end(); it++) {
+    std::set<std::string>::const_iterator it;
+    for (it = all_objects_in_ssd_set.begin(); it != all_objects_in_ssd_set.end(); it++) {
       ofs_object_list << *it << std::endl;
     }
     ofs_object_list.close();
