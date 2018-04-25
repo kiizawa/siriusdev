@@ -56,12 +56,43 @@ void read(const std::string &policy, const std::string &file_list, const std::st
 	it->second = it->second + 1;
       }
     }
-    //std::vector<std::string> fields = split(line, ',');
-    //std::string oid = fields[1];
-    //objects.push_back(line);
   }
   ifs_file_list.close();
 
+  std::set<std::string> objects_in_ssd_set;
+  {
+    std::map<std::string, int>::iterator it;
+    for (it = object_map.begin() ; it != object_map.end(); ++it) {
+      if (it->second > 1) {
+	objects_in_ssd_set.insert(it->first);
+      }
+    }
+  }
+
+  assert(objects_in_ssd_set.size() == 0);
+
+  std::vector<std::string> all_objects;
+  {
+    std::map<std::string, int>::iterator it;
+    for (it = object_map.begin(); it != object_map.end(); it++) {
+      all_objects.insert(it->first);
+    }
+  }
+
+  int num_objects_in_SSD = all_objects.size() * B_SSD/(B_HDD + B_SSD);
+  std::set<int> rands;
+  while (rands.size() < num_objects_in_SSD) {
+    int i = rand() % all_objects.size();
+    rands.insert(i);
+  }
+  for (int i = 0; i < all_objects.size(); i++) {
+    std::set<int>::iterator it = rands.find(i);
+    if (it != rands.end()) {
+      objects_in_ssd_set.insert(all_objects[i]);
+    }
+  }
+
+#if 0
   std::map<int, int> counts;
 
   std::vector<std::string> objects_in_ssd;
@@ -82,6 +113,7 @@ void read(const std::string &policy, const std::string &file_list, const std::st
       it2->second = it2->second + 1;
     }
   }
+#endif
 
   std::map<int, int>::iterator it2;
   for (it2 = counts.begin(); it2 != counts.end(); ++it2) {

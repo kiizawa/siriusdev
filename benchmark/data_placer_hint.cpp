@@ -74,8 +74,6 @@ void read(const std::string &policy, const std::string &file_list, const std::st
       }
     }
   }
-  // std::cout << object_map.size() << std::endl;
-  // std::cout << objects_in_ssd_set.size() << std::endl;
 
   assert(objects_in_ssd_set.size() == 0);
 
