@@ -73,22 +73,22 @@ do
     then
 	NODE=192.168.0.10
     fi
-    if [ $i = "1" ]
-    then
-	NODE=192.168.0.11
-    fi
-    if [ $i = "2" ]
-    then
-	NODE=192.168.0.12
-    fi
-    if [ $i = "3" ]
-    then
-	NODE=192.168.0.13
-    fi
-    if [ $i = "4" ]
-    then
-	NODE=192.168.0.14
-    fi
+    #if [ $i = "1" ]
+    #then
+    #    NODE=192.168.0.11
+    #fi
+    #if [ $i = "2" ]
+    #then
+    #    NODE=192.168.0.12
+    #fi
+    #if [ $i = "3" ]
+    #then
+    #    NODE=192.168.0.13
+    #fi
+    #if [ $i = "4" ]
+    #then
+    #    NODE=192.168.0.14
+    #fi
     #W_LIST=$SHARED_LIST_DIR/writer_list/writer_list_u
     W_LIST=$WORKING_SET_LIST
     W_LOG=$LOG_DIR/wh.log.${i}
