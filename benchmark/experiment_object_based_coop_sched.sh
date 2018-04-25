@@ -41,7 +41,7 @@ then
     mkdir $SHARED_LOG_DIR
 fi
 
-LOG_DIR=$SHARED_LOG_DIR/${NUM_NODES}_${MODE}_${POLICY}
+LOG_DIR=$SHARED_LOG_DIR/${NUM_NODES}_${MODE}_${POLICY}_COOP
 rm -rf $LOG_DIR; mkdir $LOG_DIR
 
 STATS=$LOG_DIR/stats.all
