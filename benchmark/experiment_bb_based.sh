@@ -184,7 +184,7 @@ echo "" >> $STATS
 
 # read
 
-PATTERNS="p2 p3 p4 p5"
+PATTERNS="p5 p4 p2 p3"
 
 for P in $PATTERNS
 do
