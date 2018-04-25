@@ -116,6 +116,10 @@ void read(const std::string &policy, const std::string &file_list, const std::st
 	objects_in_ssd.push_back(objects[i]);
       }
     }
+    printf("filename=%s best ratio=%f actual ratio=%f\n",
+	   file_name.c_str(),
+	   (double)B_SSD/B_HDD,
+	   (double)objects_in_ssd.size()/objects_in_hdd.size());
     // SSD list
     std::string output_file_name_ssd = file_name + ".ssd";
     std::ofstream ofs_ssd_object_list(output_file_name_ssd.c_str());
