@@ -59,17 +59,17 @@ void read(const std::string &policy, const std::string &file_list, const std::st
   }
   ifs_file_list.close();
 
-  std::set<std::string> objects_in_ssd_set;
+  std::set<std::string> all_objects_in_ssd_set;
   {
     std::map<std::string, int>::iterator it;
     for (it = object_map.begin() ; it != object_map.end(); ++it) {
       if (it->second > 1) {
-	objects_in_ssd_set.insert(it->first);
+	all_objects_in_ssd_set.insert(it->first);
       }
     }
   }
 
-  assert(objects_in_ssd_set.size() == 0);
+  assert(all_objects_in_ssd_set.size() == 0);
 
   std::vector<std::string> all_objects;
   {
@@ -88,9 +88,62 @@ void read(const std::string &policy, const std::string &file_list, const std::st
   for (int i = 0; i < all_objects.size(); i++) {
     std::set<int>::iterator it = rands.find(i);
     if (it != rands.end()) {
-      objects_in_ssd_set.insert(all_objects[i]);
+      all_objects_in_ssd_set.insert(all_objects[i]);
     }
   }
+
+  // output
+
+  ifs_file_list.open(file_list.c_str());
+  if (ifs_file_list.fail()) {
+    exit(0);
+  }
+  while(getline(ifs_file_list, file_name)) {
+    std::vector<std::string> objects;
+    std::string line;
+    std::ifstream ifs_object_list(file_name.c_str());
+    while(getline(ifs_object_list, line)) {
+      objects.push_back(line);
+    }
+    std::vector<std::string> objects_in_ssd;
+    std::vector<std::string> objects_in_hdd;
+    for (int i = 0; i < objects.size(); i++) {
+      std::set<int>::iterator it = all_objects_in_ssd_set.find(i);
+      if (it == all_objects_in_ssd_set.end()) {
+	objects_in_hdd.push_back(objects[i]);
+      } else {
+	objects_in_ssd.push_back(objects[i]);
+      }
+    }
+    // SSD list
+    std::string output_file_name_ssd = file_name + ".ssd";
+    std::ofstream ofs_ssd_object_list(output_file_name_ssd.c_str());
+    if (ofs_ssd_object_list.fail()) {
+      exit(0);
+    }
+    {
+      std::vector<std::string>::const_iterator it;
+      for (it = objects_in_ssd.begin(); it != objects_in_ssd.end(); it++) {
+	ofs_ssd_object_list << *it << std::endl;
+      }
+    }
+    ofs_ssd_object_list.close();
+    // HDD list
+    std::string output_file_name_hdd = file_name + ".hdd";
+    std::ofstream ofs_hdd_object_list(output_file_name_hdd.c_str());
+    if (ofs_hdd_object_list.fail()) {
+      exit(0);
+    }
+    {
+      std::vector<std::string>::const_iterator it;
+      for (it = objects_in_hdd.begin(); it != objects_in_hdd.end(); it++) {
+	ofs_hdd_object_list << *it << std::endl;
+      }
+    }
+    ofs_hdd_object_list.close();
+    // printf("%d %d\n", objects_in_ssd.size(), objects_in_hdd.size());
+  }
+  ifs_file_list.close();
 
 #if 0
   std::map<int, int> counts;

@@ -81,7 +81,6 @@ void read(const std::string &policy, const std::string &file_list, const std::st
 
   std::vector<std::string> all_objects_in_ssd;
 
-  std::map<std::string, std::pair<std::vector<std::string>, std::vector<std::string> > >  both_list;
   ifs_file_list.open(file_list.c_str());
   if (ifs_file_list.fail()) {
     exit(0);
