@@ -81,6 +81,8 @@ void read(const std::string &policy, const std::string &file_list, const std::st
 
   // start object in ssd list for each pattern
 
+  std::vector<std::string> all_objects_in_ssd;
+
   std::map<std::string, std::pair<std::vector<std::string>, std::vector<std::string> > >  both_list;
   ifs_file_list.open(file_list.c_str());
   if (ifs_file_list.fail()) {
@@ -108,6 +110,7 @@ void read(const std::string &policy, const std::string &file_list, const std::st
 	objects_in_hdd.push_back(objects[*it]);
       } else {
 	objects_in_ssd.push_back(objects[*it]);
+	all_objects_in_ssd.push_back(*it);
       }
     }
     // SSD list
@@ -231,14 +234,13 @@ void read(const std::string &policy, const std::string &file_list, const std::st
   }
 #endif
 
-#if 0
   std::ofstream ofs_ssd_object_list(object_list.c_str());
   if (ofs_ssd_object_list.fail()) {
     exit(0);
   }
   {
     std::vector<std::string>::const_iterator it;
-    for (it = objects_in_ssd.begin(); it != objects_in_ssd.end(); it++) {
+    for (it = all_objects_in_ssd.begin(); it != all_objects_in_ssd.end(); it++) {
       ofs_ssd_object_list << *it << std::endl;
     }
     ofs_ssd_object_list.close();
@@ -255,6 +257,7 @@ void read(const std::string &policy, const std::string &file_list, const std::st
     ofs_working_set_list.close();
   }
 
+#if 0
   // output
 
   std::vector<std::string> objects_in_ssd;
