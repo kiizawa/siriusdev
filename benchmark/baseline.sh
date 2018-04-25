@@ -62,7 +62,7 @@ do
     then
 	NODE=192.168.0.14
     fi
-    W_LIST=$SHARED_LIST_DIR/reader_p3_list/reader_p3_list_u
+    W_LIST=$SHARED_LIST_DIR/reader_p3_list/reader_p3_list_uniq_u
     W_LOG=$LOG_DIR/wh.log.${i}
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $W_LIST; echo $i >> $SYNC_FILE"
 done
@@ -117,7 +117,7 @@ do
     then
 	NODE=192.168.0.14
     fi
-    R_LIST=$SHARED_LIST_DIR/paper/reader_p3_list
+    R_LIST=$SHARED_LIST_DIR/paper/reader_p3_list_unq
     R_LOG=$LOG_DIR/rh.log.${i}
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
@@ -172,7 +172,7 @@ do
     then
 	NODE=192.168.0.14
     fi
-    R_LIST=$SHARED_LIST_DIR/paper/reader_p3_list
+    R_LIST=$SHARED_LIST_DIR/paper/reader_p3_list_unq
     M_LOG=$LOG_DIR/ms.log.${i}
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m m -r $SSD_TIER -f $M_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
@@ -227,7 +227,7 @@ do
     then
 	NODE=192.168.0.14
     fi
-    R_LIST=$SHARED_LIST_DIR/paper/reader_p3_list
+    R_LIST=$SHARED_LIST_DIR/paper/reader_p3_list_unq
     R_LOG=$LOG_DIR/rs.log.${i}
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
