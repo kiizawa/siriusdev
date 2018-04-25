@@ -107,14 +107,14 @@ void read(const std::string &policy, const std::string &file_list, const std::st
     for (int i = 0; i < objects.size(); i++) {
       std::set<int>::iterator it = rands.find(i);
       if (it == rands.end()) {
-	objects_in_hdd.push_back(objects[*it]);
+	objects_in_hdd.push_back(objects[i]);
       } else {
-	objects_in_ssd.push_back(objects[*it]);
-	all_objects_in_ssd.push_back(*it);
+	objects_in_ssd.push_back(objects[i]);
+	all_objects_in_ssd.push_back(objects[i]);
       }
     }
     // SSD list
-    std::string output_file_name_ssd = file_name + "_ssd";
+    std::string output_file_name_ssd = file_name + ".ssd";
     std::ofstream ofs_ssd_object_list(output_file_name_ssd.c_str());
     if (ofs_ssd_object_list.fail()) {
       exit(0);
@@ -127,7 +127,7 @@ void read(const std::string &policy, const std::string &file_list, const std::st
     }
     ofs_ssd_object_list.close();
     // HDD list
-    std::string output_file_name_hdd = file_name + "_hdd";
+    std::string output_file_name_hdd = file_name + ".hdd";
     std::ofstream ofs_hdd_object_list(output_file_name_hdd.c_str());
     if (ofs_hdd_object_list.fail()) {
       exit(0);

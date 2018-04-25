@@ -1,4 +1,4 @@
-all: benchmark analyser replayer data_placer
+all: benchmark analyser replayer data_placer data_placer_hint
 
 benchmark: benchmark.cpp
 	g++ -g -I ../lib benchmark.cpp ../lib/object_mover.cpp -lboost_system -lboost_thread -lrados -o benchmark.exe
