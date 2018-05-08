@@ -82,7 +82,7 @@ void read(const std::string trace_filename, int thread_num, const std::string &o
 	rets[j] = 0;
 	waiting[j] = object;
 	bls[j]->clear();
-	om.ReadAsync(object, bls[j], &rets[j]);
+	om.ReadAsync(object, bls[j], 0, &rets[j]);
 	// while (rets[j] == 1);
 	// assert(rets[j] == 0);
 	break;

@@ -56,7 +56,7 @@ void read(const std::string trace_filename, int thread_num, int object_num) {
       if (ret > 0) {
 	rets[j] = 0;
 	bls[j]->clear();
-	om.ReadAsync(object, bls[j], &rets[j]);
+	om.ReadAsync(object, bls[j], 0, &rets[j]);
 	// while (rets[j] == 1);
 	// assert(rets[j] == 0);
 	break;
