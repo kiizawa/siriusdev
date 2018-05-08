@@ -1,3 +1,6 @@
+#include <assert.h>
+#include <string.h>
+
 #include "object_mover.h"
 
 int main() {

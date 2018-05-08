@@ -1,7 +1,8 @@
 #ifndef __OBJECT_MOVER_H
 #define __OBJECT_MOVER_H
 
-#include "object_mover.hpp"
+#include <stddef.h>
+#include <stdint.h>
 
 enum {
   SIRIUS_CEPH_TIER_SSD,
@@ -9,14 +10,10 @@ enum {
   SIRIUS_CEPH_TIER_TD,
 };
 
-ObjectMover *om;
-
 /**
  * Initialize
  */
-extern "C" void sirius_ceph_initialize(const char* ceph_conf_file) {
-  om = new ObjectMover(std::string(ceph_conf_file));
-}
+extern void sirius_ceph_initialize(const char* ceph_conf_file);
 
 /**
  * Create an object in the specified tier asynchronously
@@ -28,12 +25,7 @@ extern "C" void sirius_ceph_initialize(const char* ceph_conf_file) {
  * @param[out] err  0 success
  * @param[out] err <0 failure
  */
-extern "C" void sirius_ceph_create_async(int tier, const char *oid, const char *buf, size_t len, int *err) {
-  std::string object_name(oid);
-  librados::bufferlist bl;
-  bl.append(buf, len);
-  om->CreateAsync(static_cast<ObjectMover::Tier>(tier), object_name, bl, err);
-}
+extern void sirius_ceph_create_async(int tier, const char *oid, const char *buf, size_t len, int *err);
 
 /**
  * Move an object to the specified tier asynchronously
@@ -43,10 +35,7 @@ extern "C" void sirius_ceph_create_async(int tier, const char *oid, const char *
  * @param[out] err  0 success
  * @param[out] err <0 failure
  */
-extern "C" void sirius_ceph_move_async(int tier, const char *oid, int *err) {
-  std::string object_name(oid);
-  om->MoveAsync(static_cast<ObjectMover::Tier>(tier), object_name, err);
-}
+extern void sirius_ceph_move_async(int tier, const char *oid, int *err);
 
 /**
  * Read an object asynchronously
@@ -57,10 +46,7 @@ extern "C" void sirius_ceph_move_async(int tier, const char *oid, int *err) {
  * @param[in] len the number of bytes to read
  * @param[out] ret number of bytes read on success, negative error code on failure
  */
-extern "C" void sirius_ceph_read_async(const char *oid, char* buf, uint64_t off, size_t len, int *ret) {
-  std::string object_name(oid);
-  om->CReadAsync(object_name, buf, off, len, ret);
-}
+extern void sirius_ceph_read_async(const char *oid, char* buf, uint64_t off, size_t len, int *ret);
 
 /**
  * Delete an object asynchronously
@@ -69,16 +55,11 @@ extern "C" void sirius_ceph_read_async(const char *oid, char* buf, uint64_t off,
  * @param[out] err  0 success
  * @param[out] err <0 failure
  */
-extern "C" void sirius_ceph_delete_async(const char *oid, int *err) {
-  std::string object_name(oid);
-  om->DeleteAsync(object_name, err);
-}
+extern void sirius_ceph_delete_async(const char *oid, int *err);
 
 /**
  * Finalize
  */
-extern "C" void sirius_ceph_finalize() {
-  delete om;
-}
+extern void sirius_ceph_finalize();
 
 #endif
