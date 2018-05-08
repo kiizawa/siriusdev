@@ -53,12 +53,13 @@ extern "C" void sirius_ceph_move_async(int tier, const char *oid, int *err) {
  *
  * @param[in] oid the name of the object
  * @param[in] buf where to store the results 
+ * @param[in] off the offset to start reading from in the object
  * @param[in] len the number of bytes to read
  * @param[out] ret number of bytes read on success, negative error code on failure
  */
-extern "C" void sirius_ceph_read_async(const char *oid, char* buf, size_t len, int *ret) {
+extern "C" void sirius_ceph_read_async(const char *oid, char* buf, uint64_t off, size_t len, int *ret) {
   std::string object_name(oid);
-  om->CReadAsync(object_name, buf, len, ret);
+  om->CReadAsync(object_name, buf, off, len, ret);
 }
 
 /**

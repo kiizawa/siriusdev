@@ -122,17 +122,17 @@ public:
    * @param[out] err  0 success
    * @param[out] err <0 failure
    */
-  void CRead(const std::string &object_name, char *buf, size_t len, int *err, unsigned long tid);
-  void CReadAsync(const std::string &object_name, char *buf, size_t len, int *err) {
+  void CRead(const std::string &object_name, char *buf, uint64_t off, size_t len, int *err, unsigned long tid);
+  void CReadAsync(const std::string &object_name, char *buf, uint64_t off, size_t len, int *err) {
     unsigned long tid = task_manager_->GetTid();
-    auto f = std::bind(&ObjectMover::CRead, this, object_name, buf, len, err, tid);
+    auto f = std::bind(&ObjectMover::CRead, this, object_name, buf, off, len, err, tid);
     task_manager_->StartTask(tid, object_name, "r", "-", f);
     ios_.post(f);
   }
-  void Read(const std::string &object_name, librados::bufferlist *bl, int *err, unsigned long tid);
-  void ReadAsync(const std::string &object_name, librados::bufferlist *bl, int *err) {
+  void Read(const std::string &object_name, librados::bufferlist *bl, uint64_t off, int *err, unsigned long tid);
+  void ReadAsync(const std::string &object_name, librados::bufferlist *bl, uint64_t off, int *err) {
     unsigned long tid = task_manager_->GetTid();
-    auto f = std::bind(&ObjectMover::Read, this, object_name, bl, err, tid);
+    auto f = std::bind(&ObjectMover::Read, this, object_name, bl, off, err, tid);
     task_manager_->StartTask(tid, object_name, "r", "-", f);
     ios_.post(f);
   }

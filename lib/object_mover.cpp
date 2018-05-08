@@ -314,10 +314,10 @@ void ObjectMover::Create(Tier tier, const std::string &object_name, const librad
   }
 }
 
-void ObjectMover::CRead(const std::string &object_name, char *buf, size_t len, int *err, unsigned long tid) {
+void ObjectMover::CRead(const std::string &object_name, char *buf, uint64_t off, size_t len, int *err, unsigned long tid) {
   int r;
   librados::bufferlist bl;
-  Read(object_name, &bl, &r, tid);
+  Read(object_name, &bl, off, &r, tid);
   if (r >= 0) {
     bl.copy(0, r, buf);
   }
@@ -326,13 +326,13 @@ void ObjectMover::CRead(const std::string &object_name, char *buf, size_t len, i
   }
 }
 
-void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, int *err, unsigned long tid) {
+void ObjectMover::Read(const std::string &object_name, librados::bufferlist *bl, uint64_t off, int *err, unsigned long tid) {
   int r;
   Session *s = session_pool_->GetSession(boost::this_thread::get_id());
 #ifdef USE_MICRO_TIERING
-  r = s->io_ctx_storage_.read(object_name, *bl, 0, 0);
+  r = s->io_ctx_storage_.read(object_name, *bl, off, 0);
 #else
-  r = s->io_ctx_cache_.read(object_name, *bl, 0, 0);
+  r = s->io_ctx_cache_.read(object_name, *bl, off, 0);
 #endif /* !USE_MICRO_TIERING */
   if (task_manager_->FinishTask(tid)) {
     *err = r;
