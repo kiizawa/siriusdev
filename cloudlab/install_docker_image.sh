@@ -4,7 +4,7 @@
 
 set -ex
 
-DOCKER_IMAGE=kiizawa/siriusdev:base6
+DOCKER_IMAGE=kiizawa/siriusdev:base7
 
 need_to_install=0
 for NODE in $ALL_NODES
