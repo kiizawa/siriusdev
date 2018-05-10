@@ -2,11 +2,11 @@
 
 set -ex
 
-READ_PATTERN="bench"
+READ_PATTERN="baseline"
 CLIENT_IDS="0"
 THREAD_NUM=16
 NUM_CLIENTS=`echo $CLIENT_IDS | wc -w`
-NUM_NODES=2
+NUM_NODES="1+1"
 
 METHOD=pool
 HDD_TIER=s
