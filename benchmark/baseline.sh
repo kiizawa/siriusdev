@@ -168,7 +168,7 @@ do
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
 done
 
-set +e
+set +ex
 while true
 do
     if [ `cat $SYNC_FILE | wc -l` -eq $NUM_CLIENTS ]
@@ -178,7 +178,7 @@ do
     sleep 1
 done
 rm -rf $SYNC_FILE
-set -e
+set -ex
 
 ALL_R_LOG=$LOG_DIR/rs.log.all
 for i in $CLIENT_IDS
