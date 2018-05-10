@@ -8,16 +8,24 @@ POLICY=RANDOM
 #MODE=PARTIAL
 #POLICY=HINT
 
-B_HDD=334
-B_SSD=968
+NUM_NODES="1+1"
+B_SSD=508
+B_HDD=182
+
+#NUM_NODES="1+2"
+#B_SSD=508
+#B_HDD=341
+
+#NUM_NODES="1+4"
+#B_SSD=?
+#B_HDD=?
 
 WRITER_IDS="0"
 NUM_WRITERS=`echo $WRITER_IDS | wc -w`
 
-READER_IDS="0 1 2 3"
-NUM_READERS=`echo $READER_IDS | wc -w`
+NUM_READERS=10
+READER_IDS=`seq -f %02g 1 $NUM_READERS`
 
-NUM_NODES=2
 THREAD_NUM=16
 
 METHOD=pool
@@ -52,15 +60,15 @@ rm -rf $SYNC_FILE
 # calcuate data placement
 
 SSD_OBJECTS_LIST=/tmp/share/ssd_set
-WORKING_SET_LIST=/tmp/share/working_set
+ALL_OBJECTS_LIST=/tmp/share/working_set
 rm -f $SSD_OBJECTS_LIST
-rm -f $WORKING_SET_LIST
+rm -f $ALL_OBJECTS_LIST
 if [ $POLICY = "RANDOM" ]
 then
-    ./data_placer.exe      -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $WORKING_SET_LIST
+    ./data_placer.exe      -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $ALL_OBJECTS_LIST
 elif [ $POLICY = "HINT" ]
 then
-    ./data_placer_hint.exe -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $WORKING_SET_LIST
+    ./data_placer_hint.exe -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $ALL_OBJECTS_LIST
 fi
 
 # write (hdd)
@@ -73,24 +81,7 @@ do
     then
 	NODE=192.168.0.10
     fi
-    #if [ $i = "1" ]
-    #then
-    #    NODE=192.168.0.11
-    #fi
-    #if [ $i = "2" ]
-    #then
-    #    NODE=192.168.0.12
-    #fi
-    #if [ $i = "3" ]
-    #then
-    #    NODE=192.168.0.13
-    #fi
-    #if [ $i = "4" ]
-    #then
-    #    NODE=192.168.0.14
-    #fi
-    #W_LIST=$SHARED_LIST_DIR/writer_list/writer_list_u
-    W_LIST=$WORKING_SET_LIST
+    W_LIST=$ALL_OBJECTS_LIST
     W_LOG=$LOG_DIR/wh.log.${i}
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $W_LIST; echo $i >> $SYNC_FILE"
 done
@@ -129,25 +120,9 @@ do
     then
 	NODE=192.168.0.10
     fi
-    #if [ $i = "1" ]
-    #then
-	#NODE=192.168.0.11
-    #fi
-    #if [ $i = "2" ]
-    #then
-	#NODE=192.168.0.12
-    #fi
-    #if [ $i = "3" ]
-    #then
-	#NODE=192.168.0.13
-    #fi
-    #if [ $i = "4" ]
-    #then
-	#NODE=192.168.0.14
-    #fi
     if [ $MODE = "ALL" ]
     then
-	cat $WORKING_SET_LIST | cut -d , -f 1 > /tmp/share/working_set.move
+	cat $ALL_OBJECTS_LIST | cut -d , -f 1 > /tmp/share/working_set.move
 	M_LIST=/tmp/share/working_set.move
     else
 	M_LIST=$SSD_OBJECTS_LIST
@@ -186,36 +161,13 @@ touch $SYNC_FILE
 
 for i in $READER_IDS
 do
-    if [ $i = "0" ]
-    then
-	NODE=192.168.0.10
-	PATTERN=p2
-    fi
-    if [ $i = "1" ]
-    then
-	NODE=192.168.0.10
-	PATTERN=p3
-    fi
-    if [ $i = "2" ]
-    then
-	NODE=192.168.0.10
-	PATTERN=p4
-    fi
-    if [ $i = "3" ]
-    then
-	NODE=192.168.0.10
-	PATTERN=p5
-    fi
-    #if [ $i = "4" ]
-    #then
-	#NODE=192.168.0.14
-    #fi
-    R_LIST=$SHARED_LIST_DIR/paper/reader_${PATTERN}_list_unq
-    R_LOG=$LOG_DIR/$PATTERN.log
+    NODE=192.168.0.10
+    R_LIST=$SHARED_LIST_DIR/reader_synthetic_list/reader_synthetic_list.$i
+    R_LOG=$LOG_DIR/$i.log
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $R_LIST >> $STATS; /tmp/share/analyser.exe $R_LOG >> $STATS ; echo $i >> $SYNC_FILE"
 done
 
-set +e
+set +ex
 while true
 do
     if [ `cat $SYNC_FILE | wc -l` -eq $NUM_READERS ]
@@ -225,7 +177,7 @@ do
     sleep 1
 done
 rm -rf $SYNC_FILE
-set -e
+set -ex
 
 #ALL_R_LOG=$LOG_DIR/rs.log.all
 #for i in $WRITER_IDS
