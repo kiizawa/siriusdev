@@ -45,7 +45,7 @@ POLICY=LOCALITY_OBLIVIOUS
 WRITER_IDS="0"
 NUM_WRITERS=`echo $WRITER_IDS | wc -w`
 
-THREAD_NUM=16
+THREAD_NUM=40
 
 METHOD=pool
 HDD_TIER=s
@@ -203,7 +203,8 @@ do
 	    fi
 	fi
 	R_LOG=$LOG_DIR/${P}.log.${i}
-	ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
+	THREAD_NUM_PER_READER=`expr $THREAD_NUM / $NUM_READERS`
+	ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM_PER_READER -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
     done
 
     set +ex
