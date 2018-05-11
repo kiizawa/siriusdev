@@ -7,20 +7,20 @@ CAPACITY=ALL
 #CAPACITY=PARTIAL
 
 # system (variable)
-#NUM_NODES="1+1"
-#B_SSD=508
-#B_HDD=182
+NUM_NODES="1+1"
+B_SSD=505
+B_HDD=179
 
-NUM_NODES="1+2"
-B_SSD=508
-B_HDD=341
+#NUM_NODES="1+2"
+#B_SSD=505
+#B_HDD=347
 
 #NUM_NODES="1+4"
-#B_SSD=?
-#B_HDD=?
+#B_SSD=505
+#B_HDD=671
 
 # num of patterns (variable)
-NUM_PATTERNS=10
+NUM_PATTERNS=20
 PATTERNS=`seq -f %02g 1 $NUM_PATTERNS`
 rm -rf file_list
 for i in $PATTERNS
