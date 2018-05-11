@@ -19,14 +19,18 @@ B_HDD=182
 #B_SSD=?
 #B_HDD=?
 
-# num of readers (fixed)
-NUM_READERS=10
-READER_IDS=`seq -f %02g 1 $NUM_READERS`
+# num of patterns (variable)
+NUM_PATTERNS=10
+PATTERNS=`seq -f %02g 1 $NUM_PATTERNS`
 rm -rf file_list
-for i in $READER_IDS
+for i in $PATTERNS
 do
     echo /tmp/share/XGC_data/reader_synthetic_list/reader_synthetic_list.$i >> file_list
 done
+
+# num of readers (dependent)
+NUM_READERS=$NUM_PATTERNS
+READER_IDS=`seq -f %02g 1 $NUM_READERS`
 
 # policy (fixed)
 POLICY=LOCALITY_OBLIVIOUS
