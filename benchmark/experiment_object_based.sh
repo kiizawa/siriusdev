@@ -2,12 +2,11 @@
 
 set -ex
 
-MODE=ALL
-POLICY=RANDOM
+# capacity (variable)
+CAPACITY=ALL
+#CAPACITY=PARTIAL
 
-#MODE=PARTIAL
-#POLICY=HINT
-
+# system (variable)
 NUM_NODES="1+1"
 B_SSD=508
 B_HDD=182
@@ -20,11 +19,22 @@ B_HDD=182
 #B_SSD=?
 #B_HDD=?
 
-WRITER_IDS="0"
-NUM_WRITERS=`echo $WRITER_IDS | wc -w`
-
+# num of readers (fixed)
 NUM_READERS=10
 READER_IDS=`seq -f %02g 1 $NUM_READERS`
+rm -rf file_list
+for i in $READER_IDS
+do
+    echo /tmp/share/XGC_data/reader_synthetic_list/reader_synthetic_list.$i >> file_list
+done
+
+# policy (fixed)
+POLICY=LOCALITY_OBLIVIOUS
+
+###################################################
+
+WRITER_IDS="0"
+NUM_WRITERS=`echo $WRITER_IDS | wc -w`
 
 THREAD_NUM=16
 
@@ -49,7 +59,7 @@ then
     mkdir $SHARED_LOG_DIR
 fi
 
-LOG_DIR=$SHARED_LOG_DIR/${NUM_NODES}_${MODE}_${POLICY}
+LOG_DIR=$SHARED_LOG_DIR/${NUM_NODES}_${CAPACITY}_${POLICY}
 rm -rf $LOG_DIR; mkdir $LOG_DIR
 
 STATS=$LOG_DIR/stats.all
@@ -63,10 +73,10 @@ SSD_OBJECTS_LIST=/tmp/share/ssd_set
 ALL_OBJECTS_LIST=/tmp/share/working_set
 rm -f $SSD_OBJECTS_LIST
 rm -f $ALL_OBJECTS_LIST
-if [ $POLICY = "RANDOM" ]
+if [ $POLICY = "LOCALITY_OBLIVIOUS" ]
 then
     ./data_placer.exe      -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $ALL_OBJECTS_LIST
-elif [ $POLICY = "HINT" ]
+elif [ $POLICY = "LOCALITY_AWARE" ]
 then
     ./data_placer_hint.exe -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $ALL_OBJECTS_LIST
 fi
@@ -120,7 +130,7 @@ do
     then
 	NODE=192.168.0.10
     fi
-    if [ $MODE = "ALL" ]
+    if [ $CAPACITY = "ALL" ]
     then
 	cat $ALL_OBJECTS_LIST | cut -d , -f 1 > /tmp/share/working_set.move
 	M_LIST=/tmp/share/working_set.move
