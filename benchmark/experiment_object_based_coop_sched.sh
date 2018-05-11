@@ -7,13 +7,13 @@ CAPACITY=ALL
 #CAPACITY=PARTIAL
 
 # system (variable)
-NUM_NODES="1+1"
-B_SSD=508
-B_HDD=182
-
-#NUM_NODES="1+2"
+#NUM_NODES="1+1"
 #B_SSD=508
-#B_HDD=341
+#B_HDD=182
+
+NUM_NODES="1+2"
+B_SSD=508
+B_HDD=341
 
 #NUM_NODES="1+4"
 #B_SSD=?
@@ -234,6 +234,16 @@ do
 done
 
 cat $STATS | grep elapsed | tail -$NUM_PATTERNS | cut -d ' ' -f 3 > $LOG_DIR/read_time.txt
-SUM=`awk '{s += $1} END {print s}' < $LOG_DIR/read_time.txt`
+
+rm -f $LOG_DIR/read_time2.txt
+
+sum=0
+while read line
+do
+    sum=`expr $sum + $line`
+    echo $sum >> $LOG_DIR/read_time2.txt
+done < $LOG_DIR/read_time.txt
+
+SUM=`awk '{s += $1} END {print s}' < $LOG_DIR/read_time2.txt`
 AVG=`expr $SUM / $NUM_PATTERNS`
 echo "avg="$AVG"[ms]" >> $STATS
