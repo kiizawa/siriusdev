@@ -219,6 +219,16 @@ do
 done
 
 cat $STATS | grep elapsed | tail -$NUM_PATTERNS | cut -d ' ' -f 3 > $LOG_DIR/read_time.txt
-SUM=`awk '{s += $1} END {print s}' < $LOG_DIR/read_time.txt`
+
+rm -f $LOG_DIR/read_time2.txt
+
+sum=0
+while read line
+do
+    sum=`expr $sum + $line`
+    echo $sum >> $LOG_DIR/read_time2.txt
+done < $LOG_DIR/read_time.txt
+
+SUM=`awk '{s += $1} END {print s}' < $LOG_DIR/read_time2.txt`
 AVG=`expr $SUM / $NUM_PATTERNS`
 echo "avg="$AVG"[ms]" >> $STATS
