@@ -11,6 +11,8 @@
 
 //#define USE_MICRO_TIERING
 
+#define RETRY_TIME_SEC 20
+
 class SessionPool;
 
 class Session {
@@ -221,7 +223,7 @@ private:
 	    TaskInfo t = it->second;
 	    assert(now >= t.start);
 	    latencies.insert(now - t.start);
-	    if (now - t.start > 10*1000) {
+	    if (now - t.start > RETRY_TIME_SEC*1000) {
 	      // retry
 	      t.start = now;
 	      it->second = t;
