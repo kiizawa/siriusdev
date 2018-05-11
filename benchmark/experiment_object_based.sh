@@ -193,6 +193,11 @@ done
 rm -rf $SYNC_FILE
 set -ex
 
+cat $STATS | grep elapsed | tail -$NUM_PATTERNS | cut -d ' ' -f 3 > $LOG_DIR/read_time.txt
+SUM=`awk '{s += $1} END {print s}' < $LOG_DIR/read_time.txt`
+AVG=`expr $SUM / $NUM_PATTERNS`
+echo "avg="$AVG"[ms]" >> $STATS
+
 #ALL_R_LOG=$LOG_DIR/rs.log.all
 #for i in $WRITER_IDS
 #do
