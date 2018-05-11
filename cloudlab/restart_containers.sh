@@ -12,8 +12,6 @@ do
     ssh $NODE sh -c "/tmp/stop_and_remove_container.sh"
 done
 
-exit
-
 for NODE in $ALL_NODES
 do
     #scp create_container_micro.sh $NODE:/tmp
