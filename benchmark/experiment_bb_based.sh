@@ -2,19 +2,44 @@
 
 set -ex
 
-MODE=PARTIAL
-POLICY=HINT
+# capacity (variable)
+CAPACITY=ALL
+#CAPACITY=PARTIAL
 
-B_HDD=334
-B_SSD=968
+# system (variable)
+NUM_NODES="1+1"
+B_SSD=508
+B_HDD=182
+
+#NUM_NODES="1+2"
+#B_SSD=508
+#B_HDD=341
+
+#NUM_NODES="1+4"
+#B_SSD=?
+#B_HDD=?
+
+# num of patterns (variable)
+NUM_PATTERNS=10
+PATTERNS=`seq -f %02g 1 $NUM_PATTERNS`
+rm -rf file_list
+for i in $PATTERNS
+do
+    echo /tmp/share/XGC_data/reader_synthetic_list/reader_synthetic_list.$i >> file_list
+done
+
+# num of readers (fixed)
+NUM_READERS=2
+READER_IDS=`seq -f %02g 1 $NUM_READERS`
+
+# policy (fixed)
+POLICY=LOCALITY_AWARE
+
+###################################################
 
 WRITER_IDS="0"
 NUM_WRITERS=`echo $WRITER_IDS | wc -w`
 
-READER_IDS="0 1"
-NUM_READERS=`echo $READER_IDS | wc -w`
-
-NUM_NODES=2
 THREAD_NUM=16
 
 METHOD=pool
@@ -38,7 +63,7 @@ then
     mkdir $SHARED_LOG_DIR
 fi
 
-LOG_DIR=$SHARED_LOG_DIR/${NUM_NODES}_${MODE}_${POLICY}
+LOG_DIR=$SHARED_LOG_DIR/${NUM_NODES}_${CAPACITY}_${POLICY}
 rm -rf $LOG_DIR; mkdir $LOG_DIR
 
 STATS=$LOG_DIR/stats.all
@@ -49,15 +74,15 @@ rm -rf $SYNC_FILE
 # calcuate data placement
 
 SSD_OBJECTS_LIST=/tmp/share/ssd_set
-WORKING_SET_LIST=/tmp/share/working_set
+ALL_OBJECTS_LIST=/tmp/share/working_set
 rm -f $SSD_OBJECTS_LIST
-rm -f $WORKING_SET_LIST
-if [ $POLICY = "RANDOM" ]
+rm -f $ALL_OBJECTS_LIST
+if [ $POLICY = "LOCALITY_OBLIVIOUS" ]
 then
-    ./data_placer.exe      -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $WORKING_SET_LIST
-elif [ $POLICY = "HINT" ]
+    ./data_placer.exe      -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $ALL_OBJECTS_LIST
+elif [ $POLICY = "LOCALITY_AWARE" ]
 then
-    ./data_placer_hint.exe -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $WORKING_SET_LIST
+    ./data_placer_hint.exe -s $B_SSD -d $B_HDD -i file_list -o $SSD_OBJECTS_LIST -w $ALL_OBJECTS_LIST
 fi
 
 # write (hdd)
@@ -70,24 +95,7 @@ do
     then
 	NODE=192.168.0.10
     fi
-    #if [ $i = "1" ]
-    #then
-    #    NODE=192.168.0.11
-    #fi
-    #if [ $i = "2" ]
-    #then
-    #    NODE=192.168.0.12
-    #fi
-    #if [ $i = "3" ]
-    #then
-    #    NODE=192.168.0.13
-    #fi
-    #if [ $i = "4" ]
-    #then
-    #    NODE=192.168.0.14
-    #fi
-    #W_LIST=$SHARED_LIST_DIR/writer_list/writer_list_u
-    W_LIST=$WORKING_SET_LIST
+    W_LIST=$ALL_OBJECTS_LIST
     W_LOG=$LOG_DIR/wh.log.${i}
     ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m w -r $HDD_TIER -f $W_LOG -l $W_LIST; echo $i >> $SYNC_FILE"
 done
@@ -126,25 +134,9 @@ do
     then
 	NODE=192.168.0.10
     fi
-    #if [ $i = "1" ]
-    #then
-	#NODE=192.168.0.11
-    #fi
-    #if [ $i = "2" ]
-    #then
-	#NODE=192.168.0.12
-    #fi
-    #if [ $i = "3" ]
-    #then
-	#NODE=192.168.0.13
-    #fi
-    #if [ $i = "4" ]
-    #then
-	#NODE=192.168.0.14
-    #fi
-    if [ $MODE = "ALL" ]
+    if [ $CAPACITY = "ALL" ]
     then
-	cat $WORKING_SET_LIST | cut -d , -f 1 > /tmp/share/working_set.move
+	cat $ALL_OBJECTS_LIST | cut -d , -f 1 > /tmp/share/working_set.move
 	M_LIST=/tmp/share/working_set.move
     else
 	M_LIST=$SSD_OBJECTS_LIST
@@ -177,14 +169,7 @@ echo "" >> $STATS
 echo "" >> $STATS
 echo "" >> $STATS
 
-#while read line
-#do
-#    echo $line
-#done < file_list
-
 # read
-
-PATTERNS="p5 p4 p2 p3"
 
 for P in $PATTERNS
 do
@@ -193,21 +178,20 @@ do
 
     for i in $READER_IDS
     do
+	NODE=192.168.0.10
 	if [ $i = "0" ]
 	then
-	    NODE=192.168.0.10
-	    R_LIST=$SHARED_LIST_DIR/paper/reader_${P}_list_unq.ssd
+	    R_LIST=$SHARED_LIST_DIR/reader_synthetic_list/reader_synthetic_list.$P.ssd
 	fi
 	if [ $i = "1" ]
 	then
-	    NODE=192.168.0.10
-	    R_LIST=$SHARED_LIST_DIR/paper/reader_${P}_list_unq.hdd
+	    R_LIST=$SHARED_LIST_DIR/reader_synthetic_list/reader_synthetic_list.$P.hdd
 	fi
 	R_LOG=$LOG_DIR/${P}.log.${i}
 	ssh -f $NODE "ulimit -n 4096; /tmp/share/replayer.exe -t $THREAD_NUM -m r -f $R_LOG -l $R_LIST; echo $i >> $SYNC_FILE"
     done
 
-    set +e
+    set +ex
     while true
     do
 	if [ `cat $SYNC_FILE | wc -l` -eq $NUM_READERS ]
@@ -217,7 +201,7 @@ do
 	sleep 1
     done
     rm -rf $SYNC_FILE
-    set -e
+    set -ex
 
     ALL_R_LOG=$LOG_DIR/${P}.log.all
     for i in $READER_IDS
