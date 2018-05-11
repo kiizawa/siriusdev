@@ -179,11 +179,11 @@ do
     for i in $READER_IDS
     do
 	NODE=192.168.0.10
-	if [ $i = "0" ]
+	if [ $i = "01" ]
 	then
 	    R_LIST=$SHARED_LIST_DIR/reader_synthetic_list/reader_synthetic_list.$P.ssd
 	fi
-	if [ $i = "1" ]
+	if [ $i = "02" ]
 	then
 	    R_LIST=$SHARED_LIST_DIR/reader_synthetic_list/reader_synthetic_list.$P.hdd
 	fi
