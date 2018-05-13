@@ -190,6 +190,7 @@ done
     /tmp/share/replayer_single_reader.exe -t $THREAD_NUM -m r -z $TRACE_LIST
 
 for P in $PATTERNS
+do
     R_LOG=$LOG_DIR/${P}.log
     echo "$R_LOG" >> $STATS
     echo "" >> $STATS
