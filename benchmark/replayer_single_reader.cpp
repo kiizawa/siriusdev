@@ -9,6 +9,11 @@
 
 #include <rados/librados.hpp>
 
+#if 1
+#include <stdio.h>
+#include <sys/time.h>
+#endif
+
 #include "object_mover.hpp"
 
 #define OBJECT_NUM 10000
@@ -34,6 +39,12 @@ std::vector<std::string> split(std::string input, char delimiter) {
 
 void read(const std::string trace_filename, int thread_num, const std::string &object_list) {
 
+  {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    printf("1 %lu\n", tv.tv_sec);
+  }
+
   std::map<int, std::string> waiting;
 
   /* Initialize a Object Mover */
@@ -51,6 +62,12 @@ void read(const std::string trace_filename, int thread_num, const std::string &o
     exit(0);
   }
 
+  {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    printf("2 %lu\n", tv.tv_sec);
+  }
+
   std::vector<std::string> objects;
   
   std::string line;
@@ -63,6 +80,12 @@ void read(const std::string trace_filename, int thread_num, const std::string &o
   std::vector<int> rets;
   for (int i = 0; i < thread_num; i++) {
     rets.push_back(1);
+  }
+
+  {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    printf("3 %lu\n", tv.tv_sec);
   }
 
   /* read */
@@ -123,9 +146,23 @@ void read(const std::string trace_filename, int thread_num, const std::string &o
     usleep(WAIT_MSEC*1000);
   }
 
+
+  {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    printf("4 %lu\n", tv.tv_sec);
+  }
+
   std::vector<librados::bufferlist*>::iterator it;
   for (it = bls.begin(); it != bls.end(); it++) {
     delete *it;
+  }
+
+
+  {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    printf("5 %lu\n", tv.tv_sec);
   }
 
 }
