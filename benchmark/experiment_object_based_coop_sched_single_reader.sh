@@ -58,6 +58,7 @@ SSD_TIER=f
 SHARED_LIST_DIR=/tmp/share/XGC_data
 
 cp ./replayer.exe /tmp/share/
+cp ./replayer_single_reader.exe /tmp/share/
 cp ./analyser.exe /tmp/share/
 
 # log
