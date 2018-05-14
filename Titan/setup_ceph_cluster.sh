@@ -1,9 +1,15 @@
 #!/bin/sh
 
-NUM_SSD_NODES=1
-NUM_HDD_NODES=0
+# number of OSDs that store objects in memory
+NUM_SSD_NODES=5
+
+# number of OSDs that store objects in NFS mounted directory
+NUM_TD_NODES=10
+
+# number of OSDs that store objects in HPSS (not supported yet)
 NUM_TD_NODES=0
 
+# directory where ceph.conf is generated (needs to be shared)
 CEPH_CONF_DIR=$PROJWORK/csc143/$USER/ceph/conf
 if [ ! -e $CEPH_CONF_DIR ]
 then
